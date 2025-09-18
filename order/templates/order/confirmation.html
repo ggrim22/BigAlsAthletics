@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-center vh-100 bg-light">
+  <div class="card shadow-lg border-0 rounded-4 p-4 text-center" style="max-width: 400px; width: 100%;">
+
+    <h2 class="mb-3 text-primary fw-bold">Pay with Venmo</h2>
+
+    <p class="fs-4 fw-semibold text-dark mb-3">
+      Total: ${{ total_cost }}
+    </p>
+
+    <p class="text-muted mb-4">
+      Scan the QR code below or click the link to complete your payment.
+    </p>
+
+    <img src="{% static 'images/venmoQRCode.png' %}"
+         alt="Venmo QR Code"
+         class="img-fluid rounded mb-3 shadow-sm"
+         style="max-height: 350px;">
+
+    <a href="https://account.venmo.com/u/ericgrim"
+       class="btn btn-primary w-100 py-2 fw-semibold mb-2">
+      Open Venmo
+    </a>
+
+    <a href="{% url 'order:index' %}"
+       class="btn btn-outline-secondary w-100 py-2 fw-semibold">
+      Back to Shop
+    </a>
+
+    <p class="text-muted mt-3 mb-0 small">
+      Thank you for your order!
+    </p>
+  </div>
+</div>
+{% endblock %}
+

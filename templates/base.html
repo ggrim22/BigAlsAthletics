@@ -1,0 +1,36 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Calorie Tracker{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="{% static 'js/htmx.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@6.0.0/dist/echarts.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+    />
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <a class="d-inline-block p-2" href="#">
+        <img src="{% static 'images/bigalslogo.jpg' %}" id="logo" alt="Logo" height="32">
+    </a>
+    <div id="main" class="p-4">
+        {% block content %}
+        {% endblock %}
+    </div>
+    <div id="htmx-modal" class="modal fade" data-bs-focus="false">
+        <div id="dialog" class="modal-dialog modal-dialog-centered modal-dialog-scrollable" hx-target="this"></div>
+    </div>
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
+      <script src="{% static 'js/htmx-modal-forms.js' %}"></script>
+</body>
+</html>
+

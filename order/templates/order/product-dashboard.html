@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div>
+  <button class="btn btn-primary">Orders</button>
+</div>
+<div class="card shadow-sm mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h3 class="mb-0">All Products</h3>
+        <button class="btn btn-primary" hx-get="{% url 'order:product_create' %}" hx-target="#dialog">
+            Create Product
+        </button>
+    </div>
+    <div class="card-body" hx-trigger="load, products-updated from:body" hx-get="{% url 'order:product_list' %}"></div>
+</div>
+{% endblock %}

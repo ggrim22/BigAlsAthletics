@@ -1,0 +1,62 @@
+<form method="POST" action="{% url 'order:confirm_order' %}" class="modal-content">
+  {% csrf_token %}
+  <div class="modal-header">
+    <h5 class="modal-title">Order Summary</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  </div>
+
+  <div class="modal-body">
+    {% if order_items %}
+        <ul id="order-items-list" class="list-group mb-3"
+        hx-get="{% url 'order:order_summary' %}"
+        hx-trigger="order-items-updated from:body"
+        hx-swap="innerHTML">
+        {% for item in order_items %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                {{ item.product_name }} ({{ item.size_code }}) × {{ item.quantity }}
+                <button
+                  type="button"
+                  class="btn p-0 m-0 border-0 bg-transparent text-danger fs-5"
+                  hx-post="{% url 'order:delete-item' item.product_id item.size_id %}"
+                  hx-target="closest li"
+                  hx-swap="outerHTML swap:1s"
+                >
+                  ×
+                </button>
+            </li>
+          {% empty %}
+            <li class="list-group-item">No items added yet.</li>
+          {% endfor %}
+        </ul>
+      <div class="mb-2 fw-bold">
+          <span>Total: $</span>{{ total_cost }}
+      </div>
+      <div class="mb-2">
+        <input type="text" name="customer_name" placeholder="Customer Name" class="form-control" required>
+      </div>
+      <div class="mb-2">
+        <input type="email" name="customer_email" placeholder="Email" class="form-control" required>
+      </div>
+      <div class="mb-2">
+        <input type="text" name="customer_venmo" placeholder="Venmo Username" class="form-control" required>
+      </div>
+      <div class="mb-2">
+        <select name="organization" class="form-select" required>
+          {% for org in organizations %}
+            <option value="{{ org.id }}">{{ org.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    {% else %}
+      <p>No items in your order yet.</p>
+    {% endif %}
+  </div>
+
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+    {% if order_items %}
+      <button type="submit" class="btn btn-success">Confirm Order</button>
+    {% endif %}
+  </div>
+</form>
+

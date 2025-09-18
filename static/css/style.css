@@ -1,0 +1,27 @@
+#logo {
+    width: 150px;
+    height: 100px;
+    padding: 10px;
+}
+
+#main {
+    width: 100%;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#backup-code-list {
+    font-family: monospace;
+}
+
+@media print {
+    .navbar {
+        visibility: hidden;
+        display: none;
+    }
+}
+
+.form-label {
+    font-size: 16px !important;
+}
