@@ -1,5 +1,4 @@
 from django.urls import path
-from django.contrib.auth import views as auth_views
 
 from . import views
 
@@ -7,7 +6,6 @@ app_name = 'order'
 
 urlpatterns = [
     path('', views.index, name='index'),
-    path('login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
     path('add-item', views.add_item, name='add_item'),
     path('confirm-order', views.confirm_order, name='confirm_order'),
     path('order-summary', views.view_summary, name='order_summary'),
