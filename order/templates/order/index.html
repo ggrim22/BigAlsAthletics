@@ -17,7 +17,6 @@
   <hr>
   <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
     {% for product in products %}
-      {% if product.active %}
         <div class="col">
           <div class="card h-100 text-center shadow-sm border-0 rounded-3">
             <img src="{{ product.image.url }}"
@@ -61,11 +60,10 @@
             </div>
           </div>
         </div>
-    {% else %}
+    {% empty %}
       <div>
         No Products Available
       </div>
-    {% endif %}
     {% endfor %}
   </div>
 </div>
