@@ -3,17 +3,18 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-<h1 class="text-center mb-4">Create Your Order</h1>
+<div class="position-relative mb-4">
+  <h1 class="text-center">Create Your Order</h1>
+
+  {% if user.is_authenticated %}
+    <div class="position-absolute top-50 end-0 translate-middle-y d-flex gap-2">
+      <a class="btn btn-primary" href="{% url 'order:order_dashboard' %}">Manage Orders</a>
+      <a class="btn btn-primary" href="{% url 'order:product_dashboard' %}">Manage Products</a>
+    </div>
+  {% endif %}
+</div>
 <div class="container-fluid">
-  <div class="position-relative mb-3">
-    <h3 class="mb-0">Products</h3>
-    <button type="button"
-            class="btn btn-dark position-absolute end-0 top-50 translate-middle-y"
-            hx-get="{% url 'order:order_summary' %}"
-            hx-target="#dialog">
-      View Order Summary
-    </button>
-  </div>
+  <div hx-get="{% url 'order:shopping_cart' %}" hx-trigger="load, items-updated from:body"></div>
   <hr>
   <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
     {% for product in products %}

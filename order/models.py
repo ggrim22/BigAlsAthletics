@@ -31,7 +31,7 @@ class Product(models.Model):
     category = models.ForeignKey(ProductCategory, on_delete=models.CASCADE)
     name = models.CharField(max_length=200)
     color = models.CharField(max_length=50)
-    image = models.ImageField(upload_to="media/products/")
+    image = models.ImageField(upload_to="products/")
     cost = models.DecimalField(max_digits=6, decimal_places=2)
     available_sizes = models.ManyToManyField(Size, blank=True)
     active = models.BooleanField(default=True)
@@ -39,7 +39,7 @@ class Product(models.Model):
     def __str__(self):
         return f"{self.color} {self.name}"
 
-class Organization(models.Model):
+class Collection(models.Model):
     name = models.CharField(max_length=200, unique=True)
     active = models.BooleanField(default=True)
 
@@ -47,8 +47,8 @@ class Organization(models.Model):
         return self.name
 
 class Order(models.Model):
-    organization = models.ForeignKey(
-        Organization,
+    collection = models.ForeignKey(
+        Collection,
         on_delete=models.CASCADE,
         related_name="orders",
         null=True,
@@ -63,6 +63,26 @@ class Order(models.Model):
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    size = models.ForeignKey(Size, on_delete=models.CASCADE)
+
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
+
+    product_name = models.CharField(max_length=200, blank=True, null=True)
+    product_color = models.CharField(max_length=50, blank=True, null=True)
+    product_cost = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
+    product_category = models.CharField(max_length=100, blank=True, null=True)
+
+    size = models.ForeignKey(Size, on_delete=models.SET_NULL, null=True, blank=True)
+    size_code = models.CharField(max_length=4, blank=True, null=True)
+
     quantity = models.PositiveIntegerField(default=1)
+
+    def save(self, *args, **kwargs):
+        if self.product:
+            self.product_name = self.product.name
+            self.product_color = self.product.color
+            self.product_cost = self.product.cost
+            self.product_category = self.product.category.name if self.product.category else None
+
+        if self.size:
+            self.size_code = self.size.code
+        super().save(*args, **kwargs)

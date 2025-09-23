@@ -1,7 +1,8 @@
 # order/forms.py
 from django import forms
 from django.forms import modelformset_factory
-from .models import OrderItem, Product, Size
+from .models import OrderItem, Product, Collection
+
 
 class OrderItemForm(forms.ModelForm):
     class Meta:
@@ -24,4 +25,9 @@ class ProductForm(forms.ModelForm):
         model = Product
         fields = '__all__'
 
+
+class CollectionForm(forms.ModelForm):
+    class Meta:
+        model = Collection
+        fields = '__all__'
 
