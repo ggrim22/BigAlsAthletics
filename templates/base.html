@@ -43,6 +43,12 @@
             <li class="nav-item">
               <a class="nav-link px-3" href="{% url 'order:collection_dashboard' %}">Manage Collections</a>
             </li>
+            <li class="nav-item">
+              <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-primary nav-link w-100 px-3">Logout</a>
+              </form>
+            </li>
           </ul>
         </div>
       </div>
