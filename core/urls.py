@@ -9,6 +9,7 @@ from core import settings
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('login/', views.CustomLoginView.as_view(), name='login'),
+    path('logout/', views.CustomLogoutView.as_view(), name='logout'),
     path('', include('order.urls')),
 ]
 
