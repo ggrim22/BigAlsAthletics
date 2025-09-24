@@ -1,0 +1,46 @@
+{% load static %}
+{% load crispy_forms_tags %}
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle shadow-sm rounded overflow-hidden">
+        <thead class="table-dark">
+          <tr>
+            <th>Collection Name</th>
+            <th class="text-center">Active</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for collection in collections %}
+            <tr>
+              <td>{{ collection.name }}</td>
+              <td class="text-center">
+                {% if collection.active %}
+                  <span class="badge bg-success">Yes</span>
+                {% else %}
+                  <span class="badge bg-danger">No</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="dropdown d-inline-block">
+                  <button class="btn p-0 m-0 border-0 bg-transparent text-dark" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    ...
+                  </button>
+                  <ul class="dropdown-menu" aria-labelledby="actionDropdown">
+                    <li>
+                      <button type="button"
+                              class="dropdown-item"
+                              hx-get="{% url 'order:collection_update' collection.id %}"
+                              hx-target="#dialog">
+                          Edit
+                      </button>
+                    </li>
+                    <li><button class="dropdown-item text-danger" type="button" hx-get="{% url 'order:collection_delete' collection.id %}" hx-target="#dialog">Delete</button></li>
+                  </ul>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+    </table>
+</div>

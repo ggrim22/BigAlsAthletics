@@ -31,15 +31,6 @@
       <div class="mb-2 fw-bold">
           <span>Total: $</span>{{ total_cost }}
       </div>
-    <div class="mb-2">
-      <select name="collection" class="form-select" required>
-        <option value="">---------</option>
-        {% for collection in collections %}
-          <option value="{{ collection.id }}">{{ collection.name }}</option>
-        {% endfor %}
-      </select>
-      <small class="form-text text-muted">Please select your order</small>
-      </div>
       <div class="mb-2">
         <input type="text" name="customer_name" placeholder="Customer Name" class="form-control" required>
       </div>

@@ -1,14 +1,13 @@
 <div class="position-relative mb-3">
-  <h3 class="mb-0">Products</h3>
+  <h2 class="mb-0">Products</h2>
   <a href="{% url 'order:order_summary' %}"
-     class="position-absolute top-50 end-0 translate-middle-y me-1 text-dark text-decoration-none"
+     class="position-absolute top-50 end-0 translate-middle-y me-1 text-dark text-decoration-none cart-link"
      hx-get="{% url 'order:order_summary' %}"
      hx-target="#dialog">
 
     <i class="bi bi-cart4 fs-4 position-relative">
       {% if order_items %}
-        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-              style="font-size: 0.65rem; line-height: 1;">
+        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger cart-badge">
           {{ order_items|length }}
         </span>
       {% endif %}

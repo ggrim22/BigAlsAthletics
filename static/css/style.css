@@ -25,3 +25,38 @@
 .form-label {
     font-size: 16px !important;
 }
+
+
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-5px); /* subtle lift */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15); /* stronger shadow */
+}
+
+.card-title {
+  color: #212529;
+}
+
+.cart-link .bi-cart4 {
+  display: inline-block;
+  transition: transform 0.2s ease;
+  cursor: pointer;
+}
+
+.cart-link:hover .bi-cart4 {
+  transform: scale(1.1);
+}
+
+.cart-badge {
+  font-size: 0.75rem;        /* smaller text */
+  width: 1.5rem;             /* fixed size */
+  height: 1.5rem;            /* makes it a perfect circle */
+  display: flex;             /* center the number */
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;   /* optional: nice outline */
+  box-shadow: 0 0 3px rgba(0,0,0,0.3); /* subtle shadow */
+}

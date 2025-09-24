@@ -20,18 +20,64 @@
     {% block head %}{% endblock %}
 </head>
 <body>
+    {% if user.is_authenticated %}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm mb-3">
+      <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="{% url 'order:index' %}">
+          Big Al's Admin
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavbar"
+                aria-controls="adminNavbar" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="adminNavbar">
+          <ul class="navbar-nav ms-auto gap-2">
+            <li class="nav-item">
+              <a class="btn btn-outline-primary nav-link px-3" href="{% url 'order:order_dashboard' %}">Manage Orders</a>
+            </li>
+            <li class="nav-item">
+              <a class="btn btn-outline-primary nav-link px-3" href="{% url 'order:product_dashboard' %}">Manage Products</a>
+            </li>
+            <li class="nav-item">
+              <a class="btn btn-outline-primary nav-link px-3" href="{% url 'order:collection_dashboard' %}">Manage Collections</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+    {% endif %}
+
+    <!-- Logo -->
     <a class="d-inline-block p-2" href="#">
         <img src="{% static 'images/bigalslogo.jpg' %}" id="logo" alt="Logo" height="32">
     </a>
+
     <div id="main" class="p-4">
         {% block content %}
         {% endblock %}
+
+        <!-- Toast container -->
+        <div data-toast-container class="toast-container position-fixed top-0 end-0 p-3">
+          <div data-toast-template class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+              <div data-toast-body class="toast-body"></div>
+              <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                      data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+          </div>
+        </div>
     </div>
+
+    <!-- Modal -->
     <div id="htmx-modal" class="modal fade" data-bs-focus="false">
         <div id="dialog" class="modal-dialog modal-dialog-centered modal-dialog-scrollable" hx-target="this"></div>
     </div>
-      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
-      <script src="{% static 'js/htmx-modal-forms.js' %}"></script>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
+    <script src="{% static 'js/htmx-modal-forms.js' %}"></script>
+    <script src="{% static 'js/toasts.js' %}"></script>
 </body>
 </html>
 

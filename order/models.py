@@ -7,6 +7,7 @@ class ProductCategory(models.Model):
     def __str__(self):
         return self.name
 
+
 class Size(models.Model):
     SIZE_CHOICES = [
         ('XS', 'Youth XS'),
@@ -27,8 +28,24 @@ class Size(models.Model):
     def __str__(self):
         return dict(self.SIZE_CHOICES).get(self.code, self.code)
 
+
+class Collection(models.Model):
+    name = models.CharField(max_length=200, unique=True)
+    active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
+
+
 class Product(models.Model):
     category = models.ForeignKey(ProductCategory, on_delete=models.CASCADE)
+    collection = models.ForeignKey(
+        Collection,
+        on_delete=models.CASCADE,
+        related_name="products",
+        null=True,
+        blank=True
+    )
     name = models.CharField(max_length=200)
     color = models.CharField(max_length=50)
     image = models.ImageField(upload_to="products/")
@@ -39,37 +56,28 @@ class Product(models.Model):
     def __str__(self):
         return f"{self.color} {self.name}"
 
-class Collection(models.Model):
-    name = models.CharField(max_length=200, unique=True)
-    active = models.BooleanField(default=True)
-
-    def __str__(self):
-        return self.name
 
 class Order(models.Model):
-    collection = models.ForeignKey(
-        Collection,
-        on_delete=models.CASCADE,
-        related_name="orders",
-        null=True,
-        blank=True
-    )
     customer_name = models.CharField(max_length=100, blank=True, verbose_name='Name')
     customer_email = models.CharField(max_length=100, blank=True, verbose_name='Email')
     customer_venmo = models.CharField(max_length=100, blank=True, verbose_name='Venmo Username')
     created_at = models.DateTimeField(auto_now_add=True)
     has_paid = models.BooleanField(default=False)
 
+    def __str__(self):
+        return f"Order #{self.id} by {self.customer_name}"
+
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
-
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
 
+    # Denormalized snapshot fields
     product_name = models.CharField(max_length=200, blank=True, null=True)
     product_color = models.CharField(max_length=50, blank=True, null=True)
     product_cost = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
     product_category = models.CharField(max_length=100, blank=True, null=True)
+    collection_name = models.CharField(max_length=200, blank=True, null=True)
 
     size = models.ForeignKey(Size, on_delete=models.SET_NULL, null=True, blank=True)
     size_code = models.CharField(max_length=4, blank=True, null=True)
@@ -82,6 +90,7 @@ class OrderItem(models.Model):
             self.product_color = self.product.color
             self.product_cost = self.product.cost
             self.product_category = self.product.category.name if self.product.category else None
+            self.collection_name = self.product.collection.name if self.product.collection else None
 
         if self.size:
             self.size_code = self.size.code

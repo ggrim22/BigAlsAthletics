@@ -48,7 +48,7 @@ def add_item(request):
         request.session["current_order_items"] = order_items
         request.session.modified = True
 
-        messages.success(request, "Item added")
+        messages.success(request, "Added to cart")
         return HTMXResponse(trigger='items-updated')
 
     return HttpResponse(status=400)
@@ -122,11 +122,13 @@ def confirm_order(request):
 def delete_item(request, product_id, size_id):
     if request.method == "POST":
         order_items = request.session.get("current_order_items", [])
-        new_items = [
-            item for item in order_items
-            if not (item["product_id"] == product_id and item["size_id"] == size_id)
-        ]
-        request.session["current_order_items"] = new_items
+
+        for i, item in enumerate(order_items):
+            if item["product_id"] == product_id and item["size_id"] == size_id:
+                del order_items[i]
+                break
+
+        request.session["current_order_items"] = order_items
         request.session.modified = True
 
         return HTMXResponse(trigger="items-updated")
@@ -302,6 +304,13 @@ def summary(request):
         'grand_total': grand_total,
     })
 
+@user_passes_test(is_admin)
+@login_required
+def collection_dashboard(request):
+    collections = Collection.objects.all()
+    context = {'collections': collections}
+    return render(request, "order/collection-dashboard.html", context)
+
 
 @user_passes_test(is_admin)
 @login_required
@@ -316,3 +325,38 @@ def collection_create(request):
 
     context = {'form': form}
     return render(request, "order/modals/collection-create.html", context)
+
+@user_passes_test(is_admin)
+@login_required
+def collection_update(request, pk):
+    collection = get_object_or_404(Collection, pk=pk)
+    if request.method == "POST":
+        form = CollectionForm(request.POST, instance=collection)
+        if form.is_valid():
+            form.save()
+            return HTMXResponse(trigger="collections-updated")
+    else:
+        form = CollectionForm(instance=collection)
+
+    context = {'form': form}
+    return render(request, "order/modals/collection-update.html", context)
+
+
+@user_passes_test(is_admin)
+@login_required
+def collection_delete(request, pk):
+    collection = get_object_or_404(Collection, pk=pk)
+    if request.method == "POST":
+        collection.delete()
+        return HTMXResponse(trigger="collections-updated")
+
+    context = {'collection': collection}
+    return render(request, "order/modals/collection-delete.html", context)
+
+
+@user_passes_test(is_admin)
+@login_required
+def collection_list(request):
+    collections = Collection.objects.all()
+    context = {'collections': collections}
+    return render(request, "order/partials/_collections-list.html", context)
