@@ -7,6 +7,7 @@
           <tr>
             <th>Product</th>
             <th>Category</th>
+            <th>Collection</th>
             <th>Color</th>
             <th>Cost</th>
             <th class="text-center">Active</th>
@@ -18,8 +19,9 @@
             <tr>
               <td>{{ product.name }}</td>
               <td>{{ product.category }}</td>
+              <td>{{ product.collection }}</td>
               <td>{{ product.color }}</td>
-              <td>{{ product.cost }}</td>
+              <td>${{ product.cost }}</td>
               <td class="text-center">
                 {% if product.active %}
                   <span class="badge bg-success">Yes</span>

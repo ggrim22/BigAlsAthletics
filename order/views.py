@@ -285,13 +285,10 @@ def summary(request):
             'row_total': row_total,
         })
 
-    grand_total = sum(column_totals)
-
     return render(request, 'order/summary.html', {
         'summary_table': summary_table,
         'size_codes': size_codes,
         'column_totals': column_totals,
-        'grand_total': grand_total,
     })
 
 @user_passes_test(is_admin)

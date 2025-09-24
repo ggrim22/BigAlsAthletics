@@ -9,18 +9,14 @@
     <li class="breadcrumb-item active" aria-current="page">Product Dashboard</li>
   </ol>
 </nav>
-
 <div class="d-flex justify-content-between mb-4">
   <h3 class="mb-0">Product Dashboard</h3>
-  <a href="{% url 'order:order_dashboard' %}" class="btn btn-outline-dark">Go to orders<i class="bi bi-arrow-right"></i></a>
+  <div class="d-flex gap-2">
+    <a hx-get="{% url 'order:product_create' %}" hx-target="#dialog" class="btn btn-outline-primary">Create Product</a>
+  </div>
 </div>
 <hr>
-<div class="card shadow-sm mb-4">
-    <div class="card-header text-end">
-        <button class="btn btn-primary" hx-get="{% url 'order:product_create' %}" hx-target="#dialog">
-            Create Product
-        </button>
-    </div>
+<div class="mb-4">
     <div class="card-body" hx-trigger="load, products-updated from:body" hx-get="{% url 'order:product_list' %}"></div>
 </div>
 {% endblock %}

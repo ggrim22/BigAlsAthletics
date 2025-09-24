@@ -112,7 +112,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/New_York'
 
 USE_I18N = True
 
@@ -135,8 +135,10 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-LOGIN_URL = '/accounts/login/'
-LOGIN_REDIRECT_URL = '/product-dashboard/'  # redirect to dashboard after login
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'order:product_dashboard'  # redirect to dashboard after login
+
+LOGOUT_REDIRECT_URL = 'order:index'
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
