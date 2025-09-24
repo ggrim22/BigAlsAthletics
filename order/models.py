@@ -13,7 +13,7 @@ class Size(models.TextChoices):
     YOUTH_S = 'YS', 'Youth Small'
     YOUTH_M = 'YM', 'Youth Medium'
     YOUTH_L = 'YL', 'Youth Large'
-    YOUTH_LX = 'YXL', 'Youth XL'
+    YOUTH_XL = 'YXL', 'Youth XL'
     ADULT_S = 'AS', 'Adult Small'
     ADULT_M = 'AM', 'Adult Medium'
     ADULT_L = 'AL', 'Adult Large'
