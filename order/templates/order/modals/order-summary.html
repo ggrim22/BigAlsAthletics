@@ -13,11 +13,11 @@
         hx-swap="innerHTML">
         {% for item in order_items %}
             <li class="list-group-item d-flex justify-content-between align-items-center">
-                {{ item.product_name }} ({{ item.size_code }}) × {{ item.quantity }}
+                {{ item.product.name }} ({{ item.size }}) × {{ item.quantity }}
                 <button
                   type="button"
                   class="btn p-0 m-0 border-0 bg-transparent text-danger fs-5"
-                  hx-post="{% url 'order:delete-item' item.product_id item.size_id %}"
+                  hx-post="{% url 'order:delete-item' item.product_id item.size %}"
                   hx-target="closest li"
                   hx-swap="outerHTML swap:1s"
                 >

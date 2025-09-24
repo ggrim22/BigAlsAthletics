@@ -1,7 +1,7 @@
 # order/forms.py
 from django import forms
 from django.forms import modelformset_factory
-from .models import OrderItem, Product, Collection
+from .models import OrderItem, Product, Collection, Size
 
 
 class OrderItemForm(forms.ModelForm):
@@ -21,6 +21,12 @@ OrderItemFormSet = modelformset_factory(
 
 
 class ProductForm(forms.ModelForm):
+    available_sizes = forms.MultipleChoiceField(
+        choices=Size.choices,
+        widget=forms.CheckboxSelectMultiple(),
+        required=False,
+    )
+
     class Meta:
         model = Product
         fields = '__all__'

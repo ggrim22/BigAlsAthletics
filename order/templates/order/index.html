@@ -45,8 +45,8 @@
                 <div class="mb-3 d-flex gap-3">
                   <div class="form-floating flex-fill">
                     <select name="size" id="size-{{ product.id }}" class="form-select" required>
-                      {% for size in product.available_sizes.all %}
-                        <option value="{{ size.id }}">{{ size.code }}</option>
+                      {% for size, size_label in product.available_sizes_list %}
+                        <option value="{{ size }}">{{ size_label }}</option>
                       {% endfor %}
                     </select>
                     <label for="size-{{ product.id }}">Size</label>

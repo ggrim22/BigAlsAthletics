@@ -15,7 +15,7 @@ def is_admin(user):
     return user.is_superuser
 
 def index(request):
-    products = Product.objects.filter(active=True).prefetch_related("available_sizes")
+    products = Product.objects.filter(active=True)
     collections = Collection.objects.filter(active=True)
 
     order_items = request.session.get("current_order_items", [])
@@ -31,19 +31,17 @@ def index(request):
 def add_item(request):
     if request.method == "POST":
         product_id = request.POST.get("product")
-        size_id = request.POST.get("size")
+        size = request.POST.get("size")
         quantity = int(request.POST.get("quantity", 1))
 
         product = get_object_or_404(Product, id=product_id)
-        size = get_object_or_404(Size, id=size_id)
 
         order_items = request.session.get("current_order_items", [])
         order_items.append({
             "product_name": product.name,
-            "size_code": size.code,
+            "size": size,
             "quantity": quantity,
             "product_id": product.id,
-            "size_id": size.id
         })
         request.session["current_order_items"] = order_items
         request.session.modified = True
@@ -60,23 +58,18 @@ def confirm_order(request):
         return redirect("order:index")
 
     if request.method == "POST":
-        collection_id = request.POST.get("collection")
-        collection = get_object_or_404(Collection, id=collection_id) if collection_id else None
-
         valid_items = []
-        removed_items = []
 
         for item in order_items:
             product_id = item.get("product_id")
-            size_id = item.get("size_id")
 
-            product_exists = Product.objects.filter(pk=product_id).exists()
-            size_exists = Size.objects.filter(pk=size_id).exists()
+            product = Product.objects.filter(pk=product_id)
 
-            if product_exists and size_exists:
+            if not product.exists():
+                continue
+
+            if item.get("size") in product.get().available_sizes:
                 valid_items.append(item)
-            else:
-                removed_items.append(item)
 
         request.session["current_order_items"] = valid_items
 
@@ -94,7 +87,7 @@ def confirm_order(request):
             OrderItem.objects.create(
                 order=order,
                 product_id=item["product_id"],
-                size_id=item["size_id"],
+                size=item["size"],
                 quantity=item["quantity"]
             )
 
@@ -118,12 +111,12 @@ def confirm_order(request):
 
     return redirect("order:index")
 
-def delete_item(request, product_id, size_id):
+def delete_item(request, product_id, size):
     if request.method == "POST":
         order_items = request.session.get("current_order_items", [])
 
         for i, item in enumerate(order_items):
-            if item["product_id"] == product_id and item["size_id"] == size_id:
+            if item["product_id"] == product_id and item["size"] == size:
                 del order_items[i]
                 break
 
@@ -232,7 +225,7 @@ def product_dashboard(request):
 @user_passes_test(is_admin)
 @login_required
 def order_list(request):
-    orders = Order.objects.prefetch_related("items__product", "items__size").all().order_by("-created_at")
+    orders = Order.objects.prefetch_related("items__product").order_by("-created_at")
     context = {'orders': orders}
     return render(request, "order/partials/_order-list.html", context)
 
@@ -257,22 +250,20 @@ def order_dashboard(request):
 @user_passes_test(is_admin)
 @login_required
 def summary(request):
-    size_order = ['XS', 'YS', 'YM', 'YL', 'YXL', 'AS', 'AM', 'AL', 'AXL', '2X', '3X', '4X']
-
     size_codes = list(
         OrderItem.objects
-        .exclude(size_code__isnull=True)
-        .values_list('size_code', flat=True)
+        .exclude(size__isnull=True)
+        .values_list('size', flat=True)
         .distinct()
     )
 
-    size_codes = [code for code in size_order if code in size_codes]
+    size_codes = [code for code in Size.values if code in size_codes]
 
     summary_qs = OrderItem.objects.values('product_name')
 
     for code in size_codes:
         summary_qs = summary_qs.annotate(
-            **{code: Sum('quantity', filter=Q(size_code=code))}
+            **{code: Sum('quantity', filter=Q(size=code))}
         )
 
     summary_qs = summary_qs.order_by('product_name')

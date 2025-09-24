@@ -8,25 +8,19 @@ class ProductCategory(models.Model):
         return self.name
 
 
-class Size(models.Model):
-    SIZE_CHOICES = [
-        ('XS', 'Youth XS'),
-        ('YS', 'Youth Small'),
-        ('YM', 'Youth Medium'),
-        ('YL', 'Youth Large'),
-        ('YXL', 'Youth XL'),
-        ('AS', 'Adult Small'),
-        ('AM', 'Adult Medium'),
-        ('AL', 'Adult Large'),
-        ('AXL', 'Adult XL'),
-        ('2X', 'Adult 2X'),
-        ('3X', 'Adult 3X'),
-        ('4X', 'Adult 4X'),
-    ]
-    code = models.CharField(max_length=4, choices=SIZE_CHOICES, unique=True)
-
-    def __str__(self):
-        return self.code
+class Size(models.TextChoices):
+    YOUTH_XS = 'XS', 'Youth XS'
+    YOUTH_S = 'YS', 'Youth Small'
+    YOUTH_M = 'YM', 'Youth Medium'
+    YOUTH_L = 'YL', 'Youth Large'
+    YOUTH_XL = 'YXL', 'Youth XL'
+    ADULT_S = 'AS', 'Adult Small'
+    ADULT_M = 'AM', 'Adult Medium'
+    ADULT_L = 'AL', 'Adult Large'
+    ADULT_XL = 'AXL', 'Adult XL'
+    ADULT_2X = '2X', 'Adult 2X'
+    ADULT_3X = '3X', 'Adult 3X'
+    ADULT_4X = '4X', 'Adult 4X'
 
 
 class Collection(models.Model):
@@ -50,12 +44,23 @@ class Product(models.Model):
     color = models.CharField(max_length=50)
     image = models.ImageField(upload_to="products/")
     cost = models.DecimalField(max_digits=6, decimal_places=2)
-    available_sizes = models.ManyToManyField(Size, blank=True)
+    available_sizes = models.JSONField(default=list)
     active = models.BooleanField(default=True)
 
     def __str__(self):
         return f"{self.color} {self.name}"
+    
+    @property
+    def available_sizes_list(self):
+        return [(size, Size(size).label) for size in self.available_sizes]
 
+
+class Organization(models.Model):
+    name = models.CharField(max_length=200, unique=True)
+    active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
 
 class Order(models.Model):
     customer_name = models.CharField(max_length=100, blank=True, verbose_name='Name')
@@ -79,8 +84,7 @@ class OrderItem(models.Model):
     product_category = models.CharField(max_length=100, blank=True, null=True)
     collection_name = models.CharField(max_length=200, blank=True, null=True)
 
-    size = models.ForeignKey(Size, on_delete=models.SET_NULL, null=True, blank=True)
-    size_code = models.CharField(max_length=4, blank=True, null=True)
+    size = models.CharField(choices=Size.choices, blank=True)
 
     quantity = models.PositiveIntegerField(default=1)
 
@@ -92,6 +96,4 @@ class OrderItem(models.Model):
             self.product_category = self.product.category.name if self.product.category else None
             self.collection_name = self.product.collection.name if self.product.collection else None
 
-        if self.size:
-            self.size_code = self.size.code
         super().save(*args, **kwargs)
