@@ -6,6 +6,7 @@ app_name = 'order'
 
 urlpatterns = [
     path('', views.index, name='index'),
+    path('accounts/login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
     path('add-item', views.add_item, name='add_item'),
     path('confirm-order', views.confirm_order, name='confirm_order'),
     path('order-summary', views.view_summary, name='order_summary'),
@@ -14,5 +15,11 @@ urlpatterns = [
     path('product-list', views.product_list, name='product_list'),
     path('product-update/<int:pk>', views.product_update, name='product_update'),
     path('product-delete/<int:pk>', views.product_delete, name='product_delete'),
-    path('dashboard/', views.dashboard, name='dashboard'),
+    path('product-dashboard/', views.product_dashboard, name='product_dashboard'),
+    path('order-dashboard/', views.order_dashboard, name='order_dashboard'),
+    path('order-list', views.order_list, name='order_list'),
+    path("orders/<int:order_id>/toggle_paid/", views.toggle_paid, name="toggle_paid"),
+    path('summary', views.summary, name='summary'),
+    path('collection-create', views.collection_create, name='collection_create'),
+    path('shopping-cart', views.shopping_cart, name='shopping_cart'),
 ]
