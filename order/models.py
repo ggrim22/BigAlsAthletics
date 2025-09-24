@@ -26,7 +26,7 @@ class Size(models.Model):
     code = models.CharField(max_length=4, choices=SIZE_CHOICES, unique=True)
 
     def __str__(self):
-        return dict(self.SIZE_CHOICES).get(self.code, self.code)
+        return self.code
 
 
 class Collection(models.Model):

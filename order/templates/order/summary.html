@@ -36,14 +36,5 @@
             </tr>
         {% endfor %}
     </tbody>
-    <tfoot>
-        <tr class="table-secondary fw-bold">
-            <td>Total</td>
-            {% for total in column_totals %}
-                <td>{{ total }}</td>
-            {% endfor %}
-            <td>{{ grand_total }}</td>
-        </tr>
-    </tfoot>
 </table>
 {% endblock %}
