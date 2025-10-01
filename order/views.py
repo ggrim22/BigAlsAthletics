@@ -1,4 +1,7 @@
+from datetime import date
 from decimal import Decimal
+import polars as pl
+
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -7,6 +10,7 @@ from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 
 from core.http import HTMXResponse
+from core.utils import ExcelDownloadResponse
 from .forms import ProductForm, CollectionForm
 from .models import Product, Size, Order, OrderItem, Collection
 
@@ -250,38 +254,31 @@ def order_dashboard(request):
 @user_passes_test(is_admin)
 @login_required
 def summary(request):
-    size_codes = list(
-        OrderItem.objects
-        .exclude(size__isnull=True)
-        .values_list('size', flat=True)
-        .distinct()
-    )
+    size_codes = list(Size.values)
 
-    size_codes = [code for code in Size.values if code in size_codes]
-
-    summary_qs = OrderItem.objects.values('product_name')
-
-    for code in size_codes:
-        summary_qs = summary_qs.annotate(
-            **{code: Sum('quantity', filter=Q(size=code))}
-        )
-
-    summary_qs = summary_qs.order_by('product_name')
+    summary_qs = OrderItem.objects.values('product_name').annotate(
+        **{
+            code: Sum('quantity', filter=Q(size=code))
+            for code in size_codes
+        }
+    ).order_by('product_name')
 
     summary_table = []
     column_totals = [0] * len(size_codes)
 
     for row in summary_qs:
-        sizes = []
+        size_quantities = []
         row_total = 0
+
         for i, code in enumerate(size_codes):
             qty = row.get(code) or 0
-            sizes.append(qty)
-            row_total += qty
+            size_quantities.append(qty)
             column_totals[i] += qty
+            row_total += qty
+
         summary_table.append({
             'product_name': row['product_name'] or 'Deleted Product',
-            'sizes': sizes,
+            'sizes': size_quantities,
             'row_total': row_total,
         })
 
@@ -347,3 +344,63 @@ def collection_list(request):
     collections = Collection.objects.all()
     context = {'collections': collections}
     return render(request, "order/partials/_collections-list.html", context)
+
+def order_download(request):
+    orders = Order.objects.prefetch_related("items")
+
+    rows = []
+    for order in orders:
+        items_summary = []
+        for item in order.items.all():
+            items_summary.append(
+                f"{item.product_name} ({item.size}) x{item.quantity}, "
+            )
+
+        rows.append({
+            "Customer Name": order.customer_name,
+            "Customer Email": order.customer_email,
+            "Venmo": order.customer_venmo,
+            "Items": "\n".join(items_summary),
+        })
+
+    df = pl.DataFrame(rows)
+    return ExcelDownloadResponse(df, "Big Al's Online Orders")
+
+
+@user_passes_test(is_admin)
+@login_required
+def order_summary_download(request):
+    size_codes = list(Size.values)
+    size_labels = {code: label for code, label in Size.choices}
+
+    summary_qs = OrderItem.objects.values('product_name').annotate(
+        **{
+            code: Sum('quantity', filter=Q(size=code))
+            for code in size_codes
+        }
+    ).order_by('product_name')
+
+    summary_table = []
+    column_totals = [0] * len(size_codes)
+
+    for row in summary_qs:
+        row_total = 0
+        flattened_row = {
+            "Product Name": row['product_name'] or 'Deleted Product',
+        }
+
+        for i, code in enumerate(size_codes):
+            qty = row.get(code) or 0
+            flattened_row[size_labels[code]] = qty
+            column_totals[i] += qty
+            row_total += qty
+
+        flattened_row["Total Ordered"] = row_total
+        summary_table.append(flattened_row)
+
+    df = pl.DataFrame(summary_table)
+
+    return ExcelDownloadResponse(
+        df,
+        f"Big Al's Order Summary - {date.today()}"
+    )

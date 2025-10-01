@@ -9,7 +9,6 @@ admin.site.register(ProductCategory)
 admin.site.register(OrderItem)
 admin.site.register(Collection)
 
-
 class ProductAdminForm(forms.ModelForm):
     available_sizes = forms.MultipleChoiceField(
         choices=Size.choices,

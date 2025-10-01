@@ -25,4 +25,6 @@ urlpatterns = [
     path('collection-dashboard/', views.collection_dashboard, name='collection_dashboard'),
     path('collection-list', views.collection_list, name='collection_list'),
     path('shopping-cart', views.shopping_cart, name='shopping_cart'),
+    path('order-download', views.order_download, name='order_download'),
+    path('order-summary-download', views.order_summary_download, name='order_summary_download'),
 ]

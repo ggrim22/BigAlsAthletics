@@ -9,7 +9,10 @@
     <li class="breadcrumb-item active" aria-current="page">Order Summary</li>
   </ol>
 </nav>
-<h2>Order Summary</h2>
+<div class="d-flex justify-content-between">
+  <h2 class="mb-0">Order Summary</h2>
+  <a href="{% url 'order:order_summary_download' %}" class="btn btn-outline-secondary">Download</a>
+</div>
 <hr>
 <table class="table table-striped table-hover table-bordered align-middle text-center">
     <thead class="table-dark">
