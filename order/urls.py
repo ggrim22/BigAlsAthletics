@@ -27,4 +27,8 @@ urlpatterns = [
     path('shopping-cart', views.shopping_cart, name='shopping_cart'),
     path('order-download', views.order_download, name='order_download'),
     path('order-summary-download', views.order_summary_download, name='order_summary_download'),
+    path('product-category-create', views.product_category_create, name='product_category_create'),
+    path('product-color-create', views.product_color_create, name='product_color_create'),
+    path('product/<int:product_id>/add-variant/', views.add_or_update_variant, name='add_product_variant'),
+    path('get-variant-price<int:product_id>', views.get_variant_price, name='get_variant_price'),
 ]

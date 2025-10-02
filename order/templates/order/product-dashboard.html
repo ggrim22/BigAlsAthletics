@@ -13,6 +13,8 @@
   <h3 class="mb-0">Product Dashboard</h3>
   <div class="d-flex gap-2">
     <a hx-get="{% url 'order:product_create' %}" hx-target="#dialog" class="btn btn-outline-primary">Create Product</a>
+    <a hx-get="{% url 'order:product_color_create' %}" hx-target="#dialog" class="btn btn-outline-dark">Add Color</a>
+    <a hx-get="{% url 'order:product_category_create' %}" hx-target="#dialog" class="btn btn-outline-secondary">Add Category</a>
   </div>
 </div>
 <hr>
