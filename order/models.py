@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db import models
 
 class ProductCategory(models.Model):
@@ -78,7 +80,6 @@ class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
 
-    # Denormalized snapshot fields
     product_name = models.CharField(max_length=200, blank=True, null=True)
     product_color = models.CharField(max_length=50, blank=True, null=True)
     product_cost = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
@@ -93,18 +94,41 @@ class OrderItem(models.Model):
     def save(self, *args, **kwargs):
         if self.product:
             self.product_name = self.product.name
-            if self.category_id:
-                variant = self.product.variants.filter(category_id=self.category_id).first()
-                self.product_cost = variant.price if variant else self.product.cost
-                self.product_category = variant.category.name if variant else None
+
+            variant = None
+            if self.product_category:
+                try:
+                    cat_id = int(self.product_category)
+                    from .models import ProductCategory
+                    category = ProductCategory.objects.filter(id=cat_id).first()
+                except (ValueError, TypeError):
+                    category = None
+
+                if not category:
+                    from .models import ProductCategory
+                    category = ProductCategory.objects.filter(name=self.product_category).first()
+
+                if category:
+                    variant = self.product.variants.filter(category=category).first()
+                    self.product_category = category.name
+
+            if not variant:
+                first_variant = self.product.variants.first()
+                if first_variant:
+                    variant = first_variant
+                    if not self.product_category:
+                        self.product_category = first_variant.category.name
+
+            if variant:
+                if not self.product_cost:
+                    self.product_cost = variant.price
             else:
-                self.product_cost = self.product.cost
-                self.product_category = None
+                if not self.product_cost:
+                    self.product_cost = Decimal("0.00")
 
             self.collection_name = self.product.collection.name if self.product.collection else None
 
         super().save(*args, **kwargs)
-
 
 
 class ProductVariant(models.Model):

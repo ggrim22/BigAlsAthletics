@@ -19,7 +19,7 @@ def is_admin(user):
     return user.is_superuser
 
 def index(request):
-    products = Product.objects.filter(active=True)
+    products = Product.objects.filter(active=True, collection__active=True)
     collections = Collection.objects.filter(active=True)
 
     order_items = request.session.get("current_order_items", [])
@@ -33,61 +33,79 @@ def index(request):
 
 def get_variant_price(request, product_id):
     category_id = request.GET.get('category')
-    if category_id:
-        variant = ProductVariant.objects.filter(product_id=product_id, category_id=category_id).first()
-        if variant:
-            return HttpResponse(f"${variant.price:.2f}")
-    return HttpResponse("$0.00")
+    size = request.GET.get('size')
+
+    variant = ProductVariant.objects.filter(product_id=product_id, category_id=category_id).first()
+    if not variant:
+        return HttpResponse("$0.00")
+
+    price = variant.price
+
+    if size in [Size.ADULT_2X, Size.ADULT_3X]:
+        price += 2
+    elif size == Size.ADULT_4X:
+        price += 3
+
+    return HttpResponse(f"${price:.2f}")
 
 
 def add_item(request):
-    if request.method == "POST":
-        product_id = request.POST.get("product")
-        size = request.POST.get("size")
-        quantity = int(request.POST.get("quantity", 1))
-        color_id = request.POST.get("color")
-        category_id = request.POST.get("category")
+    if request.method != "POST":
+        return HttpResponse(status=400)
 
-        product = get_object_or_404(Product, id=product_id)
+    product_id = request.POST.get("product")
+    size = request.POST.get("size")
+    quantity = int(request.POST.get("quantity", 1))
+    color_id = request.POST.get("color")
+    category_id = request.POST.get("category")
 
-        color_name = None
-        if color_id:
-            color_obj = ProductColor.objects.filter(id=color_id).first()
-            if color_obj:
-                color_name = color_obj.name
+    product = get_object_or_404(Product, id=product_id)
 
-        category_name = None
-        price = Decimal("0.00")
+    color_name = None
+    if color_id:
+        color = ProductColor.objects.filter(id=color_id).first()
+        if color:
+            color_name = color.name
 
-        if category_id:
-            category_obj = ProductCategory.objects.filter(id=category_id).first()
-            if category_obj:
-                category_name = category_obj.name
-                variant = product.variants.filter(category=category_obj).first()
-                if variant:
-                    price = variant.price
-        else:
-            first_variant = product.variants.first()
-            if first_variant:
-                price = first_variant.price
+    category_name = None
+    price = Decimal("0.00")
 
-        order_items = request.session.get("current_order_items", [])
-        order_items.append({
-            "product_name": product.name,
-            "size": size,
-            "quantity": quantity,
-            "product_id": product.id,
-            "color": color_name,
-            "category": category_name,
-            "price": str(price),
-        })
-        request.session["current_order_items"] = order_items
-        request.session.modified = True
+    if category_id:
+        category = ProductCategory.objects.filter(id=category_id).first()
+        if category:
+            category_name = category.name
+            variant = product.variants.filter(category=category).first()
+            if variant:
+                price = variant.price
 
-        messages.success(request, "Added to cart")
-        return HTMXResponse(trigger='items-updated')
+    if price == Decimal("0.00"):
+        first_variant = product.variants.first()
+        if first_variant:
+            price = first_variant.price
 
-    return HttpResponse(status=400)
+        if size == Size.ADULT_2X or size == Size.ADULT_3X:
+            price = price + 2
+
+        if size == Size.ADULT_4X:
+            price = price + 3
+
+    order_items = request.session.get("current_order_items", [])
+    order_items.append({
+        "product_id": product.id,
+        "product_name": product.name,
+        "size": size,
+        "quantity": quantity,
+        "color_id": color_id,
+        "color_name": color_name,
+        "category_id": category_id,
+        "category_name": category_name,
+        "price": str(price),
+    })
+    request.session["current_order_items"] = order_items
+    request.session.modified = True
+
+    messages.success(request, "Added to cart")
+    return HTMXResponse(trigger="items-updated")
 
 
 def confirm_order(request):
@@ -95,59 +113,64 @@ def confirm_order(request):
     if not order_items:
         return redirect("order:index")
 
-    if request.method == "POST":
-        valid_items = []
+    if request.method != "POST":
+        return redirect("order:index")
 
-        for item in order_items:
-            product_id = item.get("product_id")
-            try:
-                product = Product.objects.get(pk=product_id)
-            except Product.DoesNotExist:
-                continue
+    valid_items = []
+    for item in order_items:
+        product = Product.objects.filter(pk=item.get("product_id")).first()
+        if not product:
+            continue
 
-            if item.get("size") in product.available_sizes:
-                valid_items.append({
-                    "product": product,
-                    "size": item.get("size"),
-                    "quantity": item.get("quantity", 1),
-                    "color": item.get("color"),
-                    "category": int(item.get("category")),
-                })
+        size = item.get("size")
+        if size not in product.available_sizes:
+            continue
 
-        request.session["current_order_items"] = valid_items
+        price = Decimal(item.get("price", "0.00"))
 
-        if not valid_items:
-            return redirect("order:index")
+        if size == Size.ADULT_2X or size == Size.ADULT_3X:
+            price = price + 2
 
-        order = Order.objects.create(
-            customer_name=request.POST.get("customer_name", ""),
-            customer_email=request.POST.get("customer_email", ""),
-            customer_venmo=request.POST.get("customer_venmo", "")
+        if size == Size.ADULT_4X:
+            price = price + 3
+
+        valid_items.append({
+            "product": product,
+            "size": size,
+            "quantity": int(item.get("quantity", 1)),
+            "color_name": item.get("color_name"),
+            "category_name": item.get("category_name"),
+            "category_id": item.get("category_id"),
+            "price": price,
+        })
+
+    if not valid_items:
+        return redirect("order:index")
+
+    order = Order.objects.create(
+        customer_name=request.POST.get("customer_name", ""),
+        customer_email=request.POST.get("customer_email", ""),
+        customer_venmo=request.POST.get("customer_venmo", "")
+    )
+
+    total_cost = Decimal("0.00")
+    for it in valid_items:
+        OrderItem.objects.create(
+            order=order,
+            product=it["product"],
+            size=it["size"],
+            quantity=it["quantity"],
+            product_color=it.get("color_name"),
+            product_category=it.get("category_name"),
+            product_cost=it["price"],
         )
+        total_cost += it["price"] * it["quantity"]
 
-        total_cost = Decimal("0.00")
-
-        for item in valid_items:
-            variant = item["product"].variants.filter(category_id=item["category"]).first()
-            price = variant.price if variant else Decimal("0.00")
-
-            OrderItem.objects.create(
-                order=order,
-                product=item["product"],
-                size=item["size"],
-                quantity=item["quantity"],
-                product_color=item.get("color"),
-                product_category=item.get("category"),
-                product_cost=price
-            )
-
-            total_cost += item["quantity"] * price
-
+    if "current_order_items" in request.session:
         del request.session["current_order_items"]
 
-        return render(request, "order/confirmation.html", {"order": order, "total_cost": total_cost})
+    return render(request, "order/confirmation.html", {"order": order, "total_cost": total_cost})
 
-    return redirect("order:index")
 
 def delete_item(request, product_id, size):
     if request.method == "POST":
@@ -176,28 +199,35 @@ def view_summary(request):
     for item in order_items:
         try:
             product = Product.objects.get(id=item["product_id"])
-
-            price = Decimal(item.get("price", "0.00"))
-
-            total_cost += price * item.get("quantity", 1)
-
-            cleaned_items.append({
-                **item,
-                "product": product,
-                "product_color": item.get("color"),
-                "product_category": item.get("category"),
-                "price": price,
-            })
-
         except Product.DoesNotExist:
             continue
+
+        price = Decimal(item.get("price", "0.00"))
+
+        size = item.get("size")
+
+        if size == Size.ADULT_2X or size == Size.ADULT_3X:
+            price = price + 2
+
+        if size == Size.ADULT_4X:
+            price = price + 3
+
+        quantity = int(item.get("quantity", 1))
+        total_cost += price * quantity
+
+        cleaned_items.append({
+            **item,
+            "product": product,
+            "product_color": item.get("color_name"),
+            "product_category": item.get("category_name"),
+            "product_price": price,
+        })
 
     return render(request, "order/modals/order-summary.html", {
         "order_items": cleaned_items,
         "collections": collections,
         "total_cost": total_cost,
     })
-
 
 def shopping_cart(request):
     order_items = request.session.get("current_order_items", [])
@@ -298,12 +328,17 @@ def order_dashboard(request):
 def summary(request):
     size_codes = list(Size.values)
 
-    summary_qs = OrderItem.objects.values('product_name').annotate(
-        **{
-            code: Sum('quantity', filter=Q(size=code))
-            for code in size_codes
-        }
-    ).order_by('product_name')
+    summary_qs = (
+        OrderItem.objects
+        .values('product_name', 'product_category', 'product_color')
+        .annotate(
+            **{
+                code: Sum('quantity', filter=Q(size=code))
+                for code in size_codes
+            }
+        )
+        .order_by('product_name', 'product_category', 'product_color')
+    )
 
     summary_table = []
     column_totals = [0] * len(size_codes)
@@ -320,6 +355,8 @@ def summary(request):
 
         summary_table.append({
             'product_name': row['product_name'] or 'Deleted Product',
+            'product_category': row['product_category'] or 'Unknown Category',
+            'product_color': row['product_color'] or 'Unknown Color',
             'sizes': size_quantities,
             'row_total': row_total,
         })
@@ -415,12 +452,17 @@ def order_summary_download(request):
     size_codes = list(Size.values)
     size_labels = {code: label for code, label in Size.choices}
 
-    summary_qs = OrderItem.objects.values('product_name').annotate(
-        **{
-            code: Sum('quantity', filter=Q(size=code))
-            for code in size_codes
-        }
-    ).order_by('product_name')
+    summary_qs = (
+        OrderItem.objects
+        .values('product_name', 'product_category', 'product_color')
+        .annotate(
+            **{
+                code: Sum('quantity', filter=Q(size=code))
+                for code in size_codes
+            }
+        )
+        .order_by('product_name', 'product_category', 'product_color')
+    )
 
     summary_table = []
     column_totals = [0] * len(size_codes)
@@ -429,6 +471,8 @@ def order_summary_download(request):
         row_total = 0
         flattened_row = {
             "Product Name": row['product_name'] or 'Deleted Product',
+            "Category": row['product_category'] or 'Unknown Category',
+            "Color": row['product_color'] or 'Unknown Color',
         }
 
         for i, code in enumerate(size_codes):

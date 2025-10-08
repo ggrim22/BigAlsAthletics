@@ -27,7 +27,12 @@
     <tbody>
         {% for row in summary_table %}
             <tr>
-                <td class="text-start fw-bold">{{ row.product_name }}</td>
+                <td class="text-start fw-bold">
+                    {{ row.product_name }}
+                    <small class="text-muted d-block fw-normal">
+                        {{ row.product_category }}{% if row.product_color %} — {{ row.product_color }}{% endif %}
+                    </small>
+                </td>
                 {% for size in row.sizes %}
                     <td>{{ size }}</td>
                 {% endfor %}

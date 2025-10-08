@@ -1,8 +1,8 @@
 {% load static %}
 {% load crispy_forms_tags %}
 
-<div class="table-responsive">
-    <table class="table table-hover align-middle shadow-sm rounded overflow-hidden">
+<div>
+    <table class="table table-hover align-middle shadow-sm rounded">
         <thead class="table-dark">
           <tr>
             <th>Collection Name</th>
@@ -23,9 +23,12 @@
               </td>
               <td>
                 <div class="dropdown d-inline-block">
-                  <button class="btn p-0 m-0 border-0 bg-transparent text-dark" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    ...
-                  </button>
+                    <button class="btn p-0 m-0 border-0 bg-transparent text-dark"
+                            type="button"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                      ...
+                    </button>
                   <ul class="dropdown-menu" aria-labelledby="actionDropdown">
                     <li>
                       <button type="button"
