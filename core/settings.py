@@ -33,7 +33,7 @@ if DEBUG:
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # <- Add Whitenoise here
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'csp.middleware.CSPMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -41,39 +41,32 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'core.middleware.HtmxMessageMiddleware',
 ]
 
 if DEBUG:
     MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
 
-# Static files (CSS, JS, Images)
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'  # Whitenoise needs this
-STATICFILES_DIRS = [BASE_DIR / 'static']  # Include your 'static' folder
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'  # <- ensures caching and compression
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / 'static']
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# Database
 DATABASES = {
     'default': dj_database_url.config(conn_max_age=600)
 }
 
-# Crispy forms
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
-# Internal IPs
 INTERNAL_IPS = [
     "127.0.0.1",
     "localhost",
 ]
 
-# Messages
 MESSAGE_TAGS = {
     messages.DEBUG: "bg-light",
     messages.INFO: "text-white bg-primary",
@@ -82,7 +75,6 @@ MESSAGE_TAGS = {
     messages.ERROR: "text-white bg-danger",
 }
 
-# CSP (Content Security Policy) - ensure it allows your static files
 CSP_DEFAULT_SRC = ("'self'",)
 CSP_SCRIPT_SRC = ("'self'",)
 CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
@@ -91,5 +83,4 @@ CSP_IMG_SRC = ("'self'", 'data:')
 CSP_CONNECT_SRC = ("'self'",)
 CSP_FRAME_SRC = ("'self'",)
 
-# Heroku settings
-django_heroku.settings(locals(), staticfiles=False)  # We handle static with Whitenoise
+django_heroku.settings(locals(), staticfiles=False)
