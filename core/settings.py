@@ -99,4 +99,9 @@ CSP_IMG_SRC = ("'self'", 'data:')
 CSP_CONNECT_SRC = ("'self'",)
 CSP_FRAME_SRC = ("'self'",)
 
+
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'order:index'
+LOGOUT_REDIRECT_URL = 'order:index'
+
 django_heroku.settings(locals(), staticfiles=False)
