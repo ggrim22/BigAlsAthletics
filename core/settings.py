@@ -28,6 +28,9 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
 ]
 
+if DEBUG:
+    INSTALLED_APPS += ['debug_toolbar']
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',  # <- Add Whitenoise here
@@ -41,6 +44,9 @@ MIDDLEWARE = [
     'debug_toolbar.middleware.DebugToolbarMiddleware',
     'core.middleware.HtmxMessageMiddleware',
 ]
+
+if DEBUG:
+    MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
 
 # Static files (CSS, JS, Images)
 STATIC_URL = '/static/'
