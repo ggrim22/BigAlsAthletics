@@ -1,9 +1,14 @@
 Django==5.2.6
 django-crispy-forms==2.4
 crispy-bootstrap5==2024.2
+django-heroku==0.3.1
+django-csp==4.0
+django-debug-toolbar==6.0.0
+gunicorn==23.0.0
 python-dotenv==1.1.1
-dj-database-url>=0.5.0
+dj-database-url==3.0.1
 pillow==11.3.0
 polars==1.33.1
-sqlparse==0.5.3
+psycopg2==2.9.11
+whitenoise==6.11.0
 xlsxwriter==3.2.9
