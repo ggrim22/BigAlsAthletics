@@ -1,6 +1,5 @@
-crispy-bootstrap5
-django
+django>=5.0
+crispy-bootstrap5==2024.2
 Pillow
-pip-tools
 polars
 xlsxwriter
