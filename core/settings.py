@@ -26,6 +26,8 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
 ]
 
+ROOT_URLCONF = "core.urls"
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
