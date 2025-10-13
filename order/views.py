@@ -432,7 +432,7 @@ def order_download(request):
         items_summary = []
         for item in order.items.all():
             items_summary.append(
-                f"{item.product_name} ({item.size}) x{item.quantity}, "
+                f"{item.product_name} - {item.product_category} ({item.size}) x{item.quantity}, "
             )
 
         rows.append({
