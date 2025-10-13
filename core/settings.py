@@ -3,6 +3,7 @@ from pathlib import Path
 
 import dj_database_url
 import django_heroku
+from decouple import config
 from django.contrib import messages
 from dotenv import load_dotenv
 
@@ -24,6 +25,7 @@ INSTALLED_APPS = [
     'order',
     'crispy_forms',
     'crispy_bootstrap5',
+    'storages',
 ]
 
 ROOT_URLCONF = "core.urls"
@@ -64,13 +66,13 @@ MIDDLEWARE = [
 if DEBUG:
     MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
 
+
+
+
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
 
 DATABASES = {
     'default': dj_database_url.config(conn_max_age=600)
@@ -92,17 +94,31 @@ MESSAGE_TAGS = {
     messages.ERROR: "text-white bg-danger",
 }
 
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'order:index'
+LOGOUT_REDIRECT_URL = 'order:index'
+
+DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+
+AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME')
+AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME', default='us-east-2')
+AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com"
+
+AWS_S3_FILE_OVERWRITE = False
+AWS_DEFAULT_ACL = None
+AWS_QUERYSTRING_AUTH = False
+
+AWS_LOCATION = ""
+MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
+
 CSP_DEFAULT_SRC = ("'self'",)
 CSP_SCRIPT_SRC = ("'self'",)
 CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
 CSP_FONT_SRC = ("'self'",)
-CSP_IMG_SRC = ("'self'", 'data:')
+CSP_IMG_SRC = ("'self'", 'data:', f"https://{AWS_S3_CUSTOM_DOMAIN}", "https://*.amazonaws.com")
 CSP_CONNECT_SRC = ("'self'",)
 CSP_FRAME_SRC = ("'self'",)
-
-
-LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'order:index'
-LOGOUT_REDIRECT_URL = 'order:index'
 
 django_heroku.settings(locals(), staticfiles=False)
