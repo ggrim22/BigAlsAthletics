@@ -29,6 +29,8 @@ class Size(models.TextChoices):
     ADULT_2X = '2X', 'Adult 2X'
     ADULT_3X = '3X', 'Adult 3X'
     ADULT_4X = '4X', 'Adult 4X'
+    ADULT_5X = '5X', 'Adult 5X'
+    ONE_SIZE = 'One Size', 'One Size'
 
 
 class Collection(models.Model):
