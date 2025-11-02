@@ -122,4 +122,4 @@ CSP_IMG_SRC = ("'self'", 'data:', f"https://{AWS_S3_CUSTOM_DOMAIN}", "https://*.
 CSP_CONNECT_SRC = ("'self'",)
 CSP_FRAME_SRC = ("'self'",)
 
-# django_heroku.settings(locals(), staticfiles=False)
+django_heroku.settings(locals(), staticfiles=False)
