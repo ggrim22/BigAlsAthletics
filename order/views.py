@@ -528,8 +528,6 @@ def add_or_update_variant(request, product_id):
     return render(request, "order/modals/add-variant.html", {"form": form, "product": product})
 
 
-@user_passes_test(is_admin)
-@login_required
 def get_variant_sizes(request, product_id):
     category_id = request.GET.get('category')
     color_id = request.GET.get('color')
@@ -555,8 +553,6 @@ def get_variant_sizes(request, product_id):
         "current_size": None
     })
 
-@user_passes_test(is_admin)
-@login_required
 def get_variant_price(request, product_id):
     category_id = request.GET.get('category')
     color_id = request.GET.get('color')
