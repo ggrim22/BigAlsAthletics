@@ -30,5 +30,7 @@ urlpatterns = [
     path('product-category-create', views.product_category_create, name='product_category_create'),
     path('product-color-create', views.product_color_create, name='product_color_create'),
     path('product/<int:product_id>/add-variant/', views.add_or_update_variant, name='add_product_variant'),
-    path('get-variant-price<int:product_id>', views.get_variant_price, name='get_variant_price'),
+    path('product/<int:product_id>/sizes/', views.get_variant_sizes, name='get_variant_sizes'),
+    path('product/<int:product_id>/price/', views.get_variant_price, name='get_variant_price'),
+
 ]

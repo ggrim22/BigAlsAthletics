@@ -31,23 +31,6 @@ def index(request):
     }
     return render(request, "order/index.html", context)
 
-def get_variant_price(request, product_id):
-    category_id = request.GET.get('category')
-    size = request.GET.get('size')
-
-    variant = ProductVariant.objects.filter(product_id=product_id, category_id=category_id).first()
-    if not variant:
-        return HttpResponse("$0.00")
-
-    price = variant.price
-
-    if size in [Size.ADULT_2X, Size.ADULT_3X]:
-        price += 2
-    elif size == Size.ADULT_4X:
-        price += 3
-
-    return HttpResponse(f"${price:.2f}")
-
 
 def add_item(request):
     if request.method != "POST":
@@ -532,10 +515,75 @@ def add_or_update_variant(request, product_id):
             variant, created = ProductVariant.objects.update_or_create(
                 product=product,
                 category=form.cleaned_data["category"],
-                defaults={"price": form.cleaned_data["price"]}
+                color=form.cleaned_data["color"],
+                defaults={
+                    "price": form.cleaned_data["price"],
+                    "available_sizes": form.cleaned_data["available_sizes"],
+                }
             )
             return HTMXResponse(trigger="variant-added")
     else:
         form = ProductVariantForm()
 
     return render(request, "order/modals/add-variant.html", {"form": form, "product": product})
+
+
+@user_passes_test(is_admin)
+@login_required
+def get_variant_sizes(request, product_id):
+    category_id = request.GET.get('category')
+    color_id = request.GET.get('color')
+
+    product = get_object_or_404(Product, pk=product_id)
+
+    variant_qs = ProductVariant.objects.filter(product=product)
+    if category_id:
+        variant_qs = variant_qs.filter(category_id=category_id)
+    if color_id:
+        variant_qs = variant_qs.filter(color_id=color_id)
+
+    variant = variant_qs.first()
+
+    if variant and variant.available_sizes:
+        sizes = [(size_code, Size(size_code).label) for size_code in variant.available_sizes]
+    else:
+        sizes = product.get_available_sizes
+
+    return render(request, "order/partials/_variant-info.html", {
+        "product": product,
+        "sizes": sizes,
+        "current_size": None
+    })
+
+@user_passes_test(is_admin)
+@login_required
+def get_variant_price(request, product_id):
+    category_id = request.GET.get('category')
+    color_id = request.GET.get('color')
+    size = request.GET.get('size')
+
+    variant_qs = ProductVariant.objects.filter(product_id=product_id)
+
+    if category_id and category_id.isdigit():
+        variant_qs = variant_qs.filter(category_id=int(category_id))
+
+    if color_id and color_id.isdigit():
+        variant_qs = variant_qs.filter(color_id=int(color_id))
+
+    variant = variant_qs.first()
+
+    if not variant and category_id and category_id.isdigit():
+        variant_qs = ProductVariant.objects.filter(product_id=product_id, category_id=int(category_id))
+        variant = variant_qs.first()
+
+    if not variant:
+        variant = ProductVariant.objects.filter(product_id=product_id).first()
+
+    price = variant.price if variant else 0.00
+
+    if size in [Size.ADULT_2X, Size.ADULT_3X]:
+        price += 2
+    elif size == Size.ADULT_4X:
+        price += 3
+
+    return HttpResponse(f"${price:.2f}")

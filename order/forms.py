@@ -4,6 +4,7 @@ from django.forms import inlineformset_factory
 from .models import OrderItem, Product, Collection, Size, ProductCategory, ProductColor, ProductVariant
 
 
+
 class OrderItemForm(forms.ModelForm):
     class Meta:
         model = OrderItem
@@ -21,9 +22,15 @@ OrderItemFormSet = modelformset_factory(
 
 
 class ProductVariantForm(forms.ModelForm):
+    available_sizes = forms.MultipleChoiceField(
+        choices=Size.choices,
+        widget=forms.CheckboxSelectMultiple,
+        required=False
+    )
+
     class Meta:
         model = ProductVariant
-        fields = ["category", "price"]
+        fields = ["category", "price", "color"]
 
 class ProductForm(forms.ModelForm):
     available_sizes = forms.MultipleChoiceField(

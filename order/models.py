@@ -62,9 +62,9 @@ class Product(models.Model):
 
     def __str__(self):
         return f"{self.colors} {self.name}"
-    
+
     @property
-    def available_sizes_list(self):
+    def get_available_sizes(self):
         return [(size, Size(size).label) for size in self.available_sizes]
 
 class Order(models.Model):
@@ -137,9 +137,16 @@ class ProductVariant(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="variants")
     category = models.ForeignKey(ProductCategory, on_delete=models.CASCADE)
     price = models.DecimalField(max_digits=6, decimal_places=2)
+    color = models.ForeignKey(ProductColor, on_delete=models.SET_NULL, null=True, blank=True)
+    available_sizes = models.JSONField(default=list, blank=True)
 
     class Meta:
-        unique_together = ("product", "category")
+        constraints = [
+            models.UniqueConstraint(
+                fields=['product', 'category', 'color'],
+                name='unique_product_variant'
+            )
+        ]
 
     def __str__(self):
         return f"{self.product.name} - {self.category.name} (${self.price})"
