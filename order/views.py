@@ -54,7 +54,7 @@ def add_item(request):
     quantity = int(request.POST.get("quantity", 1))
     color_id = request.POST.get("color")
     category_id = request.POST.get("category")
-    back_name = request.POST.get("back_name", "").strip()  # 👈 added
+    back_name = request.POST.get("back_name", "").strip()
 
     product = get_object_or_404(Product, id=product_id)
 
@@ -148,6 +148,7 @@ def confirm_order(request):
             "category_name": item.get("category_name"),
             "category_id": item.get("category_id"),
             "price": price,
+            "back_name": back_name,
         })
 
     if not valid_items:
@@ -164,6 +165,7 @@ def confirm_order(request):
         OrderItem.objects.create(
             order=order,
             product=it["product"],
+            back_name=it["back_name"],
             size=it["size"],
             quantity=it["quantity"],
             product_color=it.get("color_name"),
