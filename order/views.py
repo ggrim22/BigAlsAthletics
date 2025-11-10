@@ -19,7 +19,19 @@ def is_admin(user):
     return user.is_superuser
 
 def index(request):
-    products = Product.objects.filter(active=True, collection__active=True)
+    products = (
+        Product.objects.filter(active=True, collection__active=True)
+        .select_related("collection")  # FK relation
+        .prefetch_related(
+            "category",
+            "colors",
+            "variants",
+            "variants__category",
+            "variants__color",
+        )
+        .order_by("name")
+    )
+
     collections = Collection.objects.filter(active=True)
 
     order_items = request.session.get("current_order_items", [])
@@ -32,6 +44,7 @@ def index(request):
     return render(request, "order/index.html", context)
 
 
+
 def add_item(request):
     if request.method != "POST":
         return HttpResponse(status=400)
@@ -41,6 +54,7 @@ def add_item(request):
     quantity = int(request.POST.get("quantity", 1))
     color_id = request.POST.get("color")
     category_id = request.POST.get("category")
+    back_name = request.POST.get("back_name", "").strip()  # 👈 added
 
     product = get_object_or_404(Product, id=product_id)
 
@@ -67,10 +81,13 @@ def add_item(request):
             price = first_variant.price
 
         if size == Size.ADULT_2X or size == Size.ADULT_3X:
-            price = price + 2
+            price += 2
+
+        if back_name:
+            price += 2
 
         if size == Size.ADULT_4X:
-            price = price + 3
+            price += 3
 
     order_items = request.session.get("current_order_items", [])
     order_items.append({
@@ -83,12 +100,14 @@ def add_item(request):
         "category_id": category_id,
         "category_name": category_name,
         "price": str(price),
+        "back_name": back_name,
     })
     request.session["current_order_items"] = order_items
     request.session.modified = True
 
     messages.success(request, "Added to cart")
     return HTMXResponse(trigger="items-updated")
+
 
 
 def confirm_order(request):
@@ -105,6 +124,7 @@ def confirm_order(request):
         if not product:
             continue
 
+        back_name = item.get("back_name")
         size = item.get("size")
         if size not in product.available_sizes:
             continue
@@ -112,6 +132,9 @@ def confirm_order(request):
         price = Decimal(item.get("price", "0.00"))
 
         if size == Size.ADULT_2X or size == Size.ADULT_3X:
+            price = price + 2
+
+        if back_name:
             price = price + 2
 
         if size == Size.ADULT_4X:
@@ -189,11 +212,16 @@ def view_summary(request):
 
         size = item.get("size")
 
+        back_name = item.get("back_name")
+
         if size == Size.ADULT_2X or size == Size.ADULT_3X:
             price = price + 2
 
         if size == Size.ADULT_4X:
             price = price + 3
+
+        if back_name:
+            price = price + 2
 
         quantity = int(item.get("quantity", 1))
         total_cost += price * quantity
@@ -557,6 +585,7 @@ def get_variant_price(request, product_id):
     category_id = request.GET.get('category')
     color_id = request.GET.get('color')
     size = request.GET.get('size')
+    back_name = request.GET.get('back_name')
 
     variant_qs = ProductVariant.objects.filter(product_id=product_id)
 
@@ -576,6 +605,9 @@ def get_variant_price(request, product_id):
         variant = ProductVariant.objects.filter(product_id=product_id).first()
 
     price = variant.price if variant else 0.00
+
+    if back_name:
+        price += 2
 
     if size in [Size.ADULT_2X, Size.ADULT_3X]:
         price += 2

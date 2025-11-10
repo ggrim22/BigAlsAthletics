@@ -7,32 +7,39 @@
 
   <div class="modal-body">
     {% if order_items %}
-        <ul id="order-items-list" class="list-group mb-3"
-        hx-get="{% url 'order:order_summary' %}"
-        hx-trigger="items-updated from:body"
-        hx-swap="innerHTML">
+      <ul id="order-items-list" class="list-group mb-3"
+          hx-get="{% url 'order:order_summary' %}"
+          hx-trigger="items-updated from:body"
+          hx-swap="innerHTML">
         {% for item in order_items %}
-          <li class="list-group-item d-flex justify-content-between align-items-center">
+          <li class="list-group-item d-flex justify-content-between align-items-start flex-column flex-md-row">
             <div>
-              <strong>{{ item.product_name }}</strong> - {{ item.product_category }}/{{ item.product_color }} ({{ item.size }}) × {{ item.quantity }}
+              <strong>{{ item.product_name }}</strong> -
+              {{ item.product_category }}/{{ item.product_color }} ({{ item.size }}) × {{ item.quantity }}
+
+              {% if item.back_name %}
+                <div class="text-muted small mt-1">
+                  <i class="bi bi-person-fill me-1"></i>Back Name: <strong>{{ item.back_name }}</strong>
+                </div>
+              {% endif %}
             </div>
             <button
-                type="button"
-                class="btn p-0 m-0 border-0 bg-transparent text-danger fs-5"
-                hx-post="{% url 'order:delete-item' item.product_id item.size %}"
-                hx-target="closest li"
-                hx-swap="outerHTML swap:1s"
+              type="button"
+              class="btn p-0 m-0 border-0 bg-transparent text-danger fs-5 align-self-start align-self-md-center"
+              hx-post="{% url 'order:delete-item' item.product_id item.size %}"
+              hx-target="closest li"
+              hx-swap="outerHTML swap:1s"
             >
               ×
             </button>
           </li>
+        {% empty %}
+          <li class="list-group-item">No items added yet.</li>
+        {% endfor %}
+      </ul>
 
-          {% empty %}
-            <li class="list-group-item">No items added yet.</li>
-          {% endfor %}
-        </ul>
       <div class="mb-2 fw-bold">
-          <span>Total: $</span>{{ total_cost }}
+        <span>Total: $</span>{{ total_cost }}
       </div>
       <div class="mb-2">
         <input type="text" name="customer_name" placeholder="Customer Name" class="form-control" required>
@@ -55,4 +62,3 @@
     {% endif %}
   </div>
 </form>
-
