@@ -11,7 +11,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 
 from core.http import HTMXResponse
 from core.utils import ExcelDownloadResponse
-from .forms import ProductForm, CollectionForm, ColorForm, CategoryForm, ProductVariantForm
+from .forms import ProductForm, CollectionForm, ColorForm, CategoryForm, ProductVariantForm, CollectionSelectForm
 from .models import Product, Size, Order, OrderItem, Collection, ProductColor, ProductCategory, ProductVariant
 
 
@@ -19,29 +19,66 @@ def is_admin(user):
     return user.is_superuser
 
 def index(request):
-    products = (
-        Product.objects.filter(active=True, collection__active=True)
-        .select_related("collection")  # FK relation
-        .prefetch_related(
-            "category",
-            "colors",
-            "variants",
-            "variants__category",
-            "variants__color",
-        )
-        .order_by("name")
-    )
+    if is_admin(request.user):
+        request.session.pop("selected_collection_id", None)
+        return redirect("order:homepage")
 
-    collections = Collection.objects.filter(active=True)
+    if request.method == "POST":
+        form = CollectionSelectForm(request.POST)
+        if form.is_valid():
+            selected_collection = form.cleaned_data["collection"]
+            if selected_collection:
+                request.session["selected_collection_id"] = selected_collection.id
+                messages.success(request, f"{selected_collection.name} selected")
+                return redirect("order:homepage")
+    else:
+        form = CollectionSelectForm()
+
+    return render(request, "order/index.html", {"form": form})
+
+def homepage(request):
+    collection_id = request.session.get("selected_collection_id")
+
+    if not collection_id and not request.user.is_superuser:
+        return redirect("order:index")
+
+    if request.user.is_superuser:
+        collection = None
+        products = (
+            Product.objects.filter(active=True, collection__active=True)
+            .select_related("collection")
+            .prefetch_related(
+                "category",
+                "colors",
+                "variants",
+                "variants__category",
+                "variants__color",
+            )
+            .order_by("name")
+        )
+    else:
+        collection = get_object_or_404(Collection, pk=collection_id)
+        products = (
+            Product.objects.filter(active=True, collection=collection)
+            .select_related("collection")
+            .prefetch_related(
+                "category",
+                "colors",
+                "variants",
+                "variants__category",
+                "variants__color",
+            )
+            .order_by("name")
+        )
 
     order_items = request.session.get("current_order_items", [])
 
     context = {
         "products": products,
         "order_items": order_items,
-        "collections": collections,
+        "collection": collection,
     }
-    return render(request, "order/index.html", context)
+    return render(request, "order/homepage.html", context)
 
 
 
@@ -242,9 +279,20 @@ def view_summary(request):
         "total_cost": total_cost,
     })
 
+
 def shopping_cart(request):
     order_items = request.session.get("current_order_items", [])
-    context = {'order_items': order_items}
+    collection_id = request.session.get("selected_collection_id")
+    collection = None
+
+    if collection_id:
+        from .models import Collection
+        collection = Collection.objects.filter(pk=collection_id).first()
+
+    context = {
+        "order_items": order_items,
+        "collection": collection,
+    }
     return render(request, "order/partials/_shopping-cart.html", context)
 
 

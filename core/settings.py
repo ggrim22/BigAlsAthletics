@@ -94,7 +94,7 @@ MESSAGE_TAGS = {
 }
 
 LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'order:index'
+LOGIN_REDIRECT_URL = 'order:homepage'
 LOGOUT_REDIRECT_URL = 'order:index'
 
 

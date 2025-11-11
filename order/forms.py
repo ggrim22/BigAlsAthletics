@@ -1,6 +1,5 @@
 from django import forms
 from django.forms import modelformset_factory
-from django.forms import inlineformset_factory
 from .models import OrderItem, Product, Collection, Size, ProductCategory, ProductColor, ProductVariant
 
 
@@ -72,3 +71,12 @@ class ColorForm(forms.ModelForm):
     class Meta:
         model = ProductColor
         fields = '__all__'
+
+
+class CollectionSelectForm(forms.Form):
+    collection = forms.ModelChoiceField(
+        queryset=Collection.objects.filter(active=True),
+        required=True,
+        label="Select a Collection",
+        widget=forms.Select(attrs={"class": "form-select"})
+    )

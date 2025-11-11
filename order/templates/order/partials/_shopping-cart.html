@@ -1,5 +1,9 @@
 <div class="position-relative mb-3">
-  <h1 class="mb-0">Products</h1>
+    {% if collection %}
+      <h1>{{ collection.name }}</h1>
+    {% else %}
+      <h1>All Products</h1>
+    {% endif %}
   <a href="{% url 'order:order_summary' %}"
      class="position-absolute top-50 end-0 translate-middle-y me-1 text-dark text-decoration-none cart-link"
      hx-get="{% url 'order:order_summary' %}"

@@ -6,6 +6,7 @@ app_name = 'order'
 
 urlpatterns = [
     path('', views.index, name='index'),
+    path("home/", views.homepage, name="homepage"),
     path('add-item', views.add_item, name='add_item'),
     path('confirm-order', views.confirm_order, name='confirm_order'),
     path('order-summary', views.view_summary, name='order_summary'),
@@ -24,7 +25,7 @@ urlpatterns = [
     path('collection-delete/<int:pk>', views.collection_delete, name='collection_delete'),
     path('collection-dashboard/', views.collection_dashboard, name='collection_dashboard'),
     path('collection-list', views.collection_list, name='collection_list'),
-    path('shopping-cart', views.shopping_cart, name='shopping_cart'),
+    path("shopping-cart/", views.shopping_cart, name="shopping_cart"),
     path('order-download', views.order_download, name='order_download'),
     path('order-summary-download', views.order_summary_download, name='order_summary_download'),
     path('product-category-create', views.product_category_create, name='product_category_create'),
