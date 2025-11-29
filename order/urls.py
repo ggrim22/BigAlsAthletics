@@ -6,7 +6,6 @@ app_name = 'order'
 
 urlpatterns = [
     path('', views.index, name='index'),
-    path("home/", views.homepage, name="homepage"),
     path('add-item', views.add_item, name='add_item'),
     path('confirm-order', views.confirm_order, name='confirm_order'),
     path('order-summary', views.view_summary, name='order_summary'),
@@ -33,5 +32,6 @@ urlpatterns = [
     path('product/<int:product_id>/add-variant/', views.add_or_update_variant, name='add_product_variant'),
     path('product/<int:product_id>/sizes/', views.get_variant_sizes, name='get_variant_sizes'),
     path('product/<int:product_id>/price/', views.get_variant_price, name='get_variant_price'),
+    path('collection/<int:collection_id>', views.products, name='products'),
 
 ]

@@ -18,7 +18,7 @@ function createToast(message) {
   htmx.find("[data-toast-container]").appendChild(element)
 
   // Show the toast using Bootstrap's API
-  const toast = new bootstrap.Toast(element, { delay: 2000 })
+  const toast = new bootstrap.Toast(element, { delay: 1500 })
   toast.show()
 }
 

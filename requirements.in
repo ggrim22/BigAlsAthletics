@@ -1,14 +1,41 @@
+# Core Framework
 Django==5.2.6
+gunicorn==23.0.0
+
+# Database
+psycopg[binary]==3.2.10
+dj-database-url==3.0.1
+
+# Forms & UI
 django-crispy-forms==2.4
 crispy-bootstrap5==2024.2
-django-heroku==0.3.1
-django-csp==4.0
-django-debug-toolbar==6.0.0
-gunicorn==23.0.0
-python-dotenv==1.1.1
-dj-database-url==3.0.1
-pillow==11.3.0
-polars==1.33.1
-psycopg2==2.9.11
+
+# Static Files & Storage
 whitenoise==6.11.0
+django-storages==1.14.6
+boto3==1.40.50
+
+# Security
+django-csp==4.0
+
+# Configuration
+python-decouple==3.8
+python-dotenv==1.1.1
+django-heroku==0.3.1
+dj-config-url==0.1.1
+
+# Development
+django-debug-toolbar==6.0.0
+
+# Data Processing
+polars==1.33.1
 xlsxwriter==3.2.9
+
+# Images
+pillow==11.3.0
+
+# Tailwind
+pytailwindcss==0.3.0
+
+# Build Tools
+pip-tools==7.5.0
