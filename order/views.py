@@ -6,8 +6,9 @@ import polars as pl
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db.models import Sum, Q
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 
 from core.http import HTMXResponse
 from core.utils import ExcelDownloadResponse
@@ -18,68 +19,69 @@ from .models import Product, Size, Order, OrderItem, Collection, ProductColor, P
 def is_admin(user):
     return user.is_superuser
 
+
 def index(request):
-    if is_admin(request.user):
-        request.session.pop("selected_collection_id", None)
-        return redirect("order:homepage")
-
-    if request.method == "POST":
-        form = CollectionSelectForm(request.POST)
-        if form.is_valid():
-            selected_collection = form.cleaned_data["collection"]
-            if selected_collection:
-                request.session["selected_collection_id"] = selected_collection.id
-                messages.success(request, f"{selected_collection.name} selected")
-                return redirect("order:homepage")
-    else:
-        form = CollectionSelectForm()
-
-    return render(request, "order/index.html", {"form": form})
-
-def homepage(request):
-    collection_id = request.session.get("selected_collection_id")
-
-    if not collection_id and not request.user.is_superuser:
-        return redirect("order:index")
-
-    if request.user.is_superuser:
-        collection = None
-        products = (
-            Product.objects.filter(active=True, collection__active=True)
-            .select_related("collection")
-            .prefetch_related(
-                "category",
-                "colors",
-                "variants",
-                "variants__category",
-                "variants__color",
-            )
-            .order_by("name")
-        )
-    else:
-        collection = get_object_or_404(Collection, pk=collection_id)
-        products = (
-            Product.objects.filter(active=True, collection=collection)
-            .select_related("collection")
-            .prefetch_related(
-                "category",
-                "colors",
-                "variants",
-                "variants__category",
-                "variants__color",
-            )
-            .order_by("name")
-        )
-
+    form = CollectionSelectForm(request.POST or None)
+    collection = None
+    products = Product.objects.none()
     order_items = request.session.get("current_order_items", [])
 
+    if request.method == "POST" and form.is_valid():
+        selected_collection = form.cleaned_data["collection"]
+        request.session["selected_collection_id"] = selected_collection.id
+
+        products = Product.objects.filter(
+            active=True, collection=selected_collection
+        ).select_related("collection").prefetch_related(
+            "category", "colors", "variants",
+            "variants__category", "variants__color",
+        ).order_by("name")
+
+        if request.headers.get('HX-Request'):
+            return render(request, "order/partials/_products.html", {
+                "products": products,
+                "collection": selected_collection
+            })
+
+        return redirect("order:index")
+
+    collection_id = request.session.get("selected_collection_id")
+    if is_admin(request.user):
+        request.session.pop("selected_collection_id", None)
+        products = Product.objects.filter(
+            active=True, collection__active=True
+        )
+    elif collection_id:
+        collection = get_object_or_404(Collection, pk=collection_id)
+        products = Product.objects.filter(
+            active=True, collection=collection
+        )
+
+    products = products.select_related("collection").prefetch_related(
+        "category", "colors", "variants",
+        "variants__category", "variants__color",
+    ).order_by("name")
+
     context = {
+        "form": form,
         "products": products,
         "order_items": order_items,
         "collection": collection,
     }
-    return render(request, "order/homepage.html", context)
 
+    if request.headers.get("HX-Request"):
+        return render(request, "order/partials/_products.html", context)
+
+    return render(request, "order/index.html", context)
+
+
+
+def products(request, collection_id):
+    selected_products = Product.objects.filter(collection=collection_id)
+    context = {
+        "selected_products": selected_products,
+    }
+    return render(request, "order/partials/_products.html", context)
 
 
 def add_item(request):

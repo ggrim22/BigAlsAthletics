@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'order',
+    'pytailwindcss',
     'crispy_forms',
     'crispy_bootstrap5',
     'storages',
@@ -94,7 +95,7 @@ MESSAGE_TAGS = {
 }
 
 LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'order:homepage'
+LOGIN_REDIRECT_URL = 'order:index'
 LOGOUT_REDIRECT_URL = 'order:index'
 
 
@@ -116,6 +117,8 @@ STORAGES = {
 
 CSP_DEFAULT_SRC = ("'self'",)
 CSP_SCRIPT_SRC = ("'self'",)
+CSP_INCLUDE_NONCE_IN = ['script-src']
+
 CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
 CSP_FONT_SRC = ("'self'",)
 CSP_IMG_SRC = ("'self'", 'data:', f"https://{AWS_S3_CUSTOM_DOMAIN}", "https://*.amazonaws.com")

@@ -3,21 +3,13 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-<nav aria-label="breadcrumb" class="mt-3">
-  <ol class="breadcrumb">
-    <li class="breadcrumb-item"><a href="/">Home</a></li>
-    <li class="breadcrumb-item active" aria-current="page">Collection Dashboard</li>
-  </ol>
-</nav>
-
-<div class="d-flex justify-content-between mb-4">
-  <h3 class="mb-0">Collection Dashboard</h3>
-  <div class="d-flex gap-2">
-    <a hx-get="{% url 'order:collection_create' %}" hx-target="#dialog" class="btn btn-outline-primary">Create Collection</a>
+<div class="max-w-7xl mx-auto mt-12">
+  <div class="flex justify-between items-center mb-4">
+    <h3 class="text-2xl font-semibold mb-0">Collection Dashboard</h3>
+    <div class="flex gap-2">
+      <a hx-get="{% url 'order:collection_create' %}" hx-target="#dialog" class="px-4 py-2 bg-stone-600 border border-stone-600 text-white hover:bg-stone-700 rounded-lg transition cursor-pointer">Create Collection</a>
+    </div>
   </div>
 </div>
-<hr>
-<div class="mb-4">
-    <div class="card-body" hx-trigger="load, collections-updated from:body" hx-get="{% url 'order:collection_list' %}"></div>
-</div>
+<div hx-trigger="load, collections-updated from:body" hx-get="{% url 'order:collection_list' %}"></div>
 {% endblock %}

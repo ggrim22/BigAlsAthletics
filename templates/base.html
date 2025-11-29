@@ -11,6 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/echarts@6.0.0/dist/echarts.min.js"></script>
     <link rel="shortcut icon" href="{% static 'images/bigalslogo.ico' %}" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link
       rel="stylesheet"
@@ -20,52 +21,70 @@
 
     {% block head %}{% endblock %}
 </head>
-<body>
-    {% if user.is_authenticated %}
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm mb-3">
-      <div class="container-fluid">
-        <a class="navbar-brand fw-bold" href="{% url 'order:index' %}">
-          Big Al's Admin
+<body class="bg-stone-200">
+  <nav class="mx-12 relative">
+    <div class="flex justify-between items-center">
+      <div>
+        <a href="{% url 'order:index' %}">
+          <img src="{% static 'images/bigalslogo.png' %}" id="logo" alt="Logo" height="32">
         </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavbar"
-                aria-controls="adminNavbar" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
+      </div>
 
-        <div class="collapse navbar-collapse" id="adminNavbar">
-          <ul class="navbar-nav ms-auto gap-2">
-            <li class="nav-item">
-              <a class="nav-link px-3" href="{% url 'order:order_dashboard' %}">Manage Orders</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link px-3" href="{% url 'order:product_dashboard' %}">Manage Products</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link px-3" href="{% url 'order:collection_dashboard' %}">Manage Collections</a>
-            </li>
-            <li class="nav-item">
-              <form method="post" action="{% url 'logout' %}" class="d-inline">
+      <div class="hidden md:flex justify-end px-4">
+        <div class="flex items-center justify-between py-3">
+          <ul class="flex items-center gap-2">
+            <li><a class="hover:text-gray-500 px-3 py-2 rounded transition-colors" href="{% url 'order:index' %}">Home</a></li>
+            <li><a class="hover:text-gray-500 px-3 py-2 rounded transition-colors" href="{% url 'order:product_dashboard' %}">About</a></li>
+            <li><a class="hover:text-gray-500 px-3 py-2 rounded transition-colors" href="{% url 'order:collection_dashboard' %}">Contact</a></li>
+            {% if user.is_authenticated %}
+            <li><a class="hover:text-gray-500 px-3 py-2 rounded transition-colors" href="{% url 'order:order_dashboard' %}">Manage Orders</a></li>
+            <li><a class="hover:text-gray-500 px-3 py-2 rounded transition-colors" href="{% url 'order:product_dashboard' %}">Manage Products</a></li>
+            <li><a class="hover:text-gray-500 px-3 py-2 rounded transition-colors" href="{% url 'order:collection_dashboard' %}">Manage Collections</a></li>
+            <li>
+              <form method="post" action="{% url 'logout' %}" class="inline">
                 {% csrf_token %}
-                <button type="submit" class="nav-link btn btn-link w-100 px-3 text-start">Logout</button>
+                <button type="submit" class="hover:text-gray-500 px-3 py-2 rounded transition-colors bg-transparent border-0">Logout</button>
               </form>
+            </li>
+            {% endif %}
+            <li>
+              <div hx-get="{% url 'order:shopping_cart' %}" hx-trigger="load, items-updated from:body"></div>
             </li>
           </ul>
         </div>
       </div>
-    </nav>
-    {% endif %}
 
-    <!-- Logo -->
-    <a class="d-inline-block p-2" href="{% url 'order:index' %}">
-        <img src="{% static 'images/bigalslogo.jpg' %}" id="logo" alt="Logo" height="32">
-    </a>
+      <!-- Mobile Hamburger Button -->
+      <button id="mobile-menu-button" class="md:hidden p-2 text-gray-600 hover:text-gray-900">
+        <i class="fas fa-bars text-2xl"></i>
+      </button>
+    </div>
 
-    <div id="main" class="p-4">
+    <!-- Mobile Menu -->
+    <ul id="mobile-menu" class="hidden flex-col gap-2 mt-2 md:hidden bg-white rounded-lg shadow-lg p-4 absolute right-0 w-56 z-50">
+      <li><a class="block px-3 py-2 rounded hover:bg-gray-100" href="{% url 'order:index' %}">Home</a></li>
+      <li><a class="block px-3 py-2 rounded hover:bg-gray-100" href="{% url 'order:product_dashboard' %}">About</a></li>
+      <li><a class="block px-3 py-2 rounded hover:bg-gray-100" href="{% url 'order:collection_dashboard' %}">Contact</a></li>
+      {% if user.is_authenticated %}
+      <li><a class="block px-3 py-2 rounded hover:bg-gray-100" href="{% url 'order:order_dashboard' %}">Manage Orders</a></li>
+      <li><a class="block px-3 py-2 rounded hover:bg-gray-100" href="{% url 'order:product_dashboard' %}">Manage Products</a></li>
+      <li><a class="block px-3 py-2 rounded hover:bg-gray-100" href="{% url 'order:collection_dashboard' %}">Manage Collections</a></li>
+      <li>
+        <form method="post" action="{% url 'logout' %}">
+          {% csrf_token %}
+          <button type="submit" class="block w-full text-left px-3 py-2 rounded hover:bg-gray-100">Logout</button>
+        </form>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+
+
+    <div id="main">
         {% block content %}
         {% endblock %}
 
-        <!-- Toast container -->
-        <div data-toast-container class="toast-container position-fixed top-0 end-0 p-3">
+    <div data-toast-container class="toast-container position-fixed top-0 end-0 p-3">
           <div data-toast-template class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true">
             <div class="d-flex">
               <div data-toast-body class="toast-body"></div>
@@ -73,15 +92,16 @@
                       data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
           </div>
-        </div>
+      </div>
     </div>
 
-    <!-- Modal -->
+
     <div id="htmx-modal" class="modal fade" data-bs-focus="false">
         <div id="dialog" class="modal-dialog modal-dialog-centered modal-dialog-scrollable" hx-target="this"></div>
     </div>
 
-    <!-- Scripts -->
+    <script src="{% static 'js/mobile-menu.js' %}" nonce="{{ request.csp_nonce }}"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
     <script src="{% static 'js/htmx-modal-forms.js' %}"></script>
     <script src="{% static 'js/toasts.js' %}"></script>

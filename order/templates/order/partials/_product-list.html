@@ -1,61 +1,79 @@
-{% load static %}
-{% load crispy_forms_tags %}
+<div class="max-w-7xl mx-auto mt-4">
 
-<div>
-    <table class="table table-hover align-middle shadow-sm rounded">
-        <thead class="table-dark">
-          <tr>
-            <th>Product</th>
-            <th>Collection</th>
-            <th>Colors</th>
-            <th class="text-center">Active</th>
-            <th></th>
+  <div class="overflow-x-auto shadow-lg rounded-lg border border-gray-200">
+    <table class="min-w-full">
+      <thead class="bg-stone-600 text-white">
+        <tr>
+          <th class="px-4 py-3 text-left text-sm font-semibold">Product</th>
+          <th class="px-4 py-3 text-left text-sm font-semibold">Collection</th>
+          <th class="px-4 py-3 text-left text-sm font-semibold">Colors</th>
+          <th class="px-4 py-3 text-center text-sm font-semibold">Active</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody class="bg-white">
+        {% for product in products %}
+          <tr class="{% cycle 'bg-white' 'bg-gray-50' %} border-b border-gray-200 hover:bg-gray-100 transition-colors">
+            <td class="px-4 py-3 text-sm">{{ product.name }}</td>
+            <td class="px-4 py-3 text-sm">{{ product.collection }}</td>
+            <td class="px-4 py-3 text-sm">
+              {% for color in product.colors.all %}
+                {{ color.name }}{% if not forloop.last %}, {% endif %}
+              {% endfor %}
+            </td>
+            <td class="px-4 py-3 text-center text-sm">
+              {% if product.active %}
+                <span class="inline-block px-2 py-1 text-xs font-semibold text-white bg-green-600 rounded">Yes</span>
+              {% else %}
+                <span class="inline-block px-2 py-1 text-xs font-semibold text-white bg-red-600 rounded">No</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-3 text-sm text-center">
+              <div class="dropdown relative inline-block">
+                <button class="p-0 m-0 border-0 bg-transparent text-gray-900 text-xl font-bold hover:text-gray-600"
+                        type="button"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                  ...
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="actionDropdown">
+                  <li>
+                    <button type="button"
+                            class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            hx-get="{% url 'order:product_update' product.id %}"
+                            hx-target="#dialog">
+                      Edit
+                    </button>
+                  </li>
+                  <li>
+                    <button type="button"
+                            class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            hx-get="{% url 'order:add_product_variant' product.id %}"
+                            hx-target="#dialog">
+                      Add/Edit Pricing
+                    </button>
+                  </li>
+                  <li>
+                    <button type="button"
+                            class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                            hx-get="{% url 'order:product_delete' product.id %}"
+                            hx-target="#dialog">
+                      Delete
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          {% for product in products %}
-            <tr>
-              <td>{{ product.name }}</td>
-              <td>{{ product.collection }}</td>
-              <td>
-                {% for color in product.colors.all %}
-                  {{ color.name }}{% if not forloop.last %}, {% endif %}
-                {% endfor %}
-              </td>
-              <td class="text-center">
-                {% if product.active %}
-                  <span class="badge bg-success">Yes</span>
-                {% else %}
-                  <span class="badge bg-danger">No</span>
-                {% endif %}
-              </td>
-              <td>
-                <div class="dropdown">
-                  <button class="btn p-0 m-0 border-0 bg-transparent text-dark" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    ...
-                  </button>
-                  <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="actionDropdown">
-                    <li>
-                      <button type="button"
-                              class="dropdown-item"
-                              hx-get="{% url 'order:product_update' product.id %}"
-                              hx-target="#dialog">
-                          Edit
-                      </button>
-                    </li>
-                    <li>
-                      <button class="dropdown-item" type="button"
-                              hx-get="{% url 'order:add_product_variant' product.id %}"
-                              hx-target="#dialog">
-                        Add/Edit Pricing
-                      </button>
-                    </li>
-                    <li><button class="dropdown-item text-danger" type="button" hx-get="{% url 'order:product_delete' product.id %}" hx-target="#dialog">Delete</button></li>
-                  </ul>
-                </div>
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
+        {% empty %}
+          <tr>
+            <td colspan="5" class="px-4 py-8 text-center text-gray-500">
+              No products yet.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
     </table>
+  </div>
+
 </div>

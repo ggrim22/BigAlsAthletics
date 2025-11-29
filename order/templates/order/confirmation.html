@@ -2,38 +2,40 @@
 {% load static %}
 
 {% block content %}
-<div class="d-flex align-items-center justify-content-center vh-100 bg-light">
-  <div class="card shadow-lg border-0 rounded-4 p-4 text-center" style="max-width: 400px; width: 100%;">
+<div class="min-h-screen bg-stone-200 flex flex-col items-center justify-center p-6 space-y-8">
 
-    <h2 class="mb-3 text-primary fw-bold">Pay with Venmo</h2>
+  <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-stone-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+  </svg>
 
-    <p class="fs-4 fw-semibold text-dark mb-3">
-      Total: ${{ total_cost }}
+  <div class="text-center max-w-md">
+    <h1 class="text-3xl font-bold text-stone-800 mb-2">Order Confirmed!</h1>
+    <p class="text-gray-600 text-lg mb-4">
+      Thank you for your order. Please complete your payment using Venmo.
     </p>
-
-    <p class="text-muted mb-4">
-      Scan the QR code below or click the link to complete your payment.
-    </p>
-
-    <img src="{% static 'images/venmoQRCode.png' %}"
-         alt="Venmo QR Code"
-         class="img-fluid rounded mb-3 shadow-sm"
-         style="max-height: 350px;">
-
-    <a href="https://account.venmo.com/u/bigalsathletics" target="_blank"
-       class="btn btn-primary w-100 py-2 fw-semibold mb-2">
-      Open Venmo
-    </a>
-
-    <a href="{% url 'order:index' %}"
-       class="btn btn-outline-secondary w-100 py-2 fw-semibold">
-      Back to Shop
-    </a>
-
-    <p class="text-muted mt-3 mb-0 small">
-      Thank you for your order!
+    <p class="text-gray-700 font-semibold text-xl mb-6">
+      Total: <span class="text-stone-900">${{ total_cost }}</span>
     </p>
   </div>
+
+  <div class="relative">
+    <img src="{% static 'images/venmoQRCode.png' %}" alt="Venmo QR Code"
+         class="mx-auto w-64 h-64 object-contain hover:scale-105 transition-transform duration-300">
+    <p class="text-gray-500 text-sm mt-2 text-center">Scan to pay with Venmo</p>
+  </div>
+
+  <a href="https://account.venmo.com/u/bigalsathletics" target="_blank"
+     class="w-full max-w-xs py-3 bg-stone-600 hover:bg-stone-700 text-white font-semibold rounded-xl text-center transition-colors">
+    Open Venmo
+  </a>
+
+  <a href="{% url 'order:index' %}"
+     class="w-full max-w-xs py-3 bg-white border border-gray-300 hover:bg-gray-100 text-gray-800 font-semibold rounded-xl text-center transition-colors">
+    Back to Shop
+  </a>
+
+  <p class="text-gray-400 text-sm mt-4">We appreciate your business!</p>
+
 </div>
 {% endblock %}
 
