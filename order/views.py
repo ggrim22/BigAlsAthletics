@@ -12,7 +12,8 @@ from django.urls import reverse
 
 from core.http import HTMXResponse
 from core.utils import ExcelDownloadResponse
-from .forms import ProductForm, CollectionForm, ColorForm, CategoryForm, ProductVariantForm, CollectionSelectForm
+from .forms import ProductForm, CollectionForm, ColorForm, CategoryForm, ProductVariantForm, CollectionSelectForm, \
+    CollectionFilterForm
 from .models import Product, Size, Order, OrderItem, Collection, ProductColor, ProductCategory, ProductVariant
 
 
@@ -390,18 +391,23 @@ def order_dashboard(request):
 @login_required
 def summary(request):
     size_codes = list(Size.values)
+    collection_filter = request.GET.get("collection")
 
     summary_qs = (
         OrderItem.objects
-        .values('product_name', 'product_category', 'product_color')
+        .values('product_name', 'product_category', 'product_color', 'product__collection')
         .annotate(
             **{
                 code: Sum('quantity', filter=Q(size=code))
                 for code in size_codes
             }
         )
-        .order_by('product_name', 'product_category', 'product_color')
     )
+
+    if collection_filter:
+        summary_qs = summary_qs.filter(product__collection=collection_filter)
+
+    summary_qs = summary_qs.order_by('product_name', 'product_category', 'product_color')
 
     summary_table = []
     column_totals = [0] * len(size_codes)
@@ -424,11 +430,17 @@ def summary(request):
             'row_total': row_total,
         })
 
-    return render(request, 'order/summary.html', {
-        'summary_table': summary_table,
-        'size_codes': size_codes,
-        'column_totals': column_totals,
-    })
+    context = {
+        "summary_table": summary_table,
+        "size_codes": size_codes,
+        "column_totals": column_totals,
+        "filter_form": CollectionFilterForm(request.GET),
+    }
+
+    if request.headers.get("HX-Request"):
+        return render(request, "order/partials/_summary-table.html", context)
+
+    return render(request, "order/summary.html", context)
 
 @user_passes_test(is_admin)
 @login_required
@@ -515,8 +527,15 @@ def order_summary_download(request):
     size_codes = list(Size.values)
     size_labels = {code: label for code, label in Size.choices}
 
+    collection_id = request.GET.get("collection")
+
+    summary_qs = OrderItem.objects.all()
+
+    if collection_id:
+        summary_qs = summary_qs.filter(product__collection_id=collection_id)
+
     summary_qs = (
-        OrderItem.objects
+        summary_qs
         .values('product_name', 'product_category', 'product_color')
         .annotate(
             **{
@@ -549,10 +568,13 @@ def order_summary_download(request):
 
     df = pl.DataFrame(summary_table)
 
-    return ExcelDownloadResponse(
-        df,
-        f"Big Al's Order Summary - {date.today()}"
-    )
+    filename = f"Big Al's Order Summary - {date.today()}"
+    if collection_id:
+        collection_name = Collection.objects.get(id=collection_id).name
+        filename += f" - {collection_name}"
+
+    return ExcelDownloadResponse(df, filename)
+
 
 @user_passes_test(is_admin)
 @login_required
