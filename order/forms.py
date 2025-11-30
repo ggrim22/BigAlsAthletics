@@ -80,3 +80,19 @@ class CollectionSelectForm(forms.Form):
         label="Select a Collection",
         widget=forms.Select(attrs={"class": "form-select"})
     )
+
+
+class CollectionFilterForm(forms.Form):
+    collection = forms.ModelChoiceField(
+        queryset=Collection.objects.filter(active=True),
+        required=False,
+        label=None,
+        empty_label="-- All Collections --",
+        widget=forms.Select(attrs={
+            "class": "form-select",
+            "hx-get": "/orders/summary/",
+            "hx-target": "#summary-table",
+            "hx-trigger": "change",
+            "hx-push-url": "true",
+        })
+    )
