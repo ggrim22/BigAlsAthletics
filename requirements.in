@@ -39,3 +39,5 @@ pytailwindcss==0.3.0
 
 # Build Tools
 pip-tools==7.5.0
+
+stripe==14.0.1
