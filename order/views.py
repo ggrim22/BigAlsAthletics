@@ -221,6 +221,7 @@ def confirm_order(request):
             "price_data": {
                 "currency": "usd",
                 "product_data": {
+                    "images": [request.build_absolute_uri(item["product"].image.url)],
                     "name": item["product"].name,
                     "description": f"Size: {item['size']}, Color: {item['color_name'] or ''}, Custom Name: {item['back_name'] or ''}",
                 },
