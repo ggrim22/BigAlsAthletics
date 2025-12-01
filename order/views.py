@@ -232,7 +232,6 @@ def confirm_order(request):
         metadata={
             "customer_name": request.POST.get("customer_name", ""),
             "customer_email": request.POST.get("customer_email", ""),
-            "customer_venmo": request.POST.get("customer_venmo", ""),
             "order_items": json.dumps(items_for_metadata),
         }
     )
@@ -257,9 +256,6 @@ def delete_item(request, product_id, size):
         return HTMXResponse(trigger="items-updated")
 
     return HTMXResponse()
-
-
-from decimal import Decimal
 
 
 def payment_success(request):
