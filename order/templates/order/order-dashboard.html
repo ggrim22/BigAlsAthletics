@@ -20,8 +20,25 @@
     </div>
   </div>
 
+  <!-- Edit Mode Toggle and Archived Orders Link -->
+  <div class="mb-4 flex justify-between items-center">
+    <label class="flex items-center gap-3 cursor-pointer">
+      <input
+        type="checkbox"
+        id="editModeToggle"
+        class="w-5 h-5 accent-stone-600 cursor-pointer"
+      >
+      <span class="text-lg font-semibold text-gray-700">Edit Mode</span>
+    </label>
+    <a href="{% url 'order:archived_orders' %}"
+       class="px-4 py-2 bg-gray-100 border border-gray-300 text-gray-700 hover:bg-gray-200 rounded-lg transition">
+      View Archived Orders
+    </a>
+  </div>
 
-  <div hx-trigger="load" hx-get="{% url 'order:order_list' %}"></div>
+  <div hx-trigger="load, order-items-updated from:body"
+       hx-get="{% url 'order:order_list' %}">
+  </div>
 
 </div>
 
