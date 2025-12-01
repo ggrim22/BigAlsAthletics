@@ -47,9 +47,6 @@
       <div class="mb-2">
         <input type="email" name="customer_email" placeholder="Email" class="form-control" required>
       </div>
-      <div class="mb-2">
-        <input type="text" name="customer_venmo" placeholder="Venmo Username" class="form-control" required>
-      </div>
     {% else %}
       <p>No items in your order yet.</p>
     {% endif %}
@@ -58,7 +55,7 @@
   <div class="modal-footer">
     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
     {% if order_items %}
-      <button type="submit" class="btn btn-success">Confirm Order</button>
+      <button type="submit" class="btn btn-success">Contine to checkout</button>
     {% endif %}
   </div>
 </form>

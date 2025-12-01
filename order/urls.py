@@ -35,6 +35,8 @@ urlpatterns = [
     path('collection/<int:collection_id>', views.products, name='products'),
     path("payment-success/", views.payment_success, name="payment-success"),
     path("payment-cancel/", views.payment_cancel, name="payment-cancel"),
+    path("about", views.about, name='about'),
+    path("contact", views.contact, name='contact'),
 
 
 ]
