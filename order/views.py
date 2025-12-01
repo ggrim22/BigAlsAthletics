@@ -198,7 +198,6 @@ def confirm_order(request):
     order = Order.objects.create(
         customer_name=request.POST.get("customer_name", ""),
         customer_email=request.POST.get("customer_email", ""),
-        customer_venmo=request.POST.get("customer_venmo", ""),
         has_paid=False
     )
 
