@@ -7,7 +7,7 @@ from . import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('webhooks/stripe/', stripe_webhook, name='stripe-webhook'),
+    # path('webhooks/stripe/', stripe_webhook, name='stripe-webhook'),
     path('login/', views.CustomLoginView.as_view(), name='login'),
     path('logout/', views.CustomLogoutView.as_view(), name='logout'),
     path('', include('order.urls')),
