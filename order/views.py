@@ -240,6 +240,11 @@ def confirm_order(request):
         }
     )
 
+    order.stripe_session_id = checkout_session.id
+    order.save()
+
+    request.session.pop("current_order_items", None)
+
     return redirect(checkout_session.url, code=303)
 
 
