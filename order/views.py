@@ -154,6 +154,13 @@ def add_item(request):
 
 
 
+import json
+from decimal import Decimal
+from django.shortcuts import redirect
+from django.urls import reverse
+import stripe
+from .models import Product, Size
+
 def confirm_order(request):
     order_items = request.session.get("current_order_items", [])
     if not order_items or request.method != "POST":
@@ -194,26 +201,19 @@ def confirm_order(request):
     if not valid_items:
         return redirect("order:index")
 
-    order = Order.objects.create(
-        customer_name=request.POST.get("customer_name", ""),
-        customer_email=request.POST.get("customer_email", ""),
-        customer_venmo=request.POST.get("customer_venmo", ""),
-        has_paid=False
-    )
-
-    for it in valid_items:
-        OrderItem.objects.create(
-            order=order,
-            product=it["product"],
-            back_name=it["back_name"],
-            size=it["size"],
-            quantity=it["quantity"],
-            product_color=it.get("color_name"),
-            product_category=it.get("category_name"),
-            product_cost=it["price"],
-        )
-
-    request.session.pop("current_order_items", None)
+    # Prepare items for Stripe metadata
+    items_for_metadata = [
+        {
+            "product_id": it["product"].id,
+            "back_name": it["back_name"],
+            "size": it["size"],
+            "quantity": it["quantity"],
+            "color_name": it.get("color_name"),
+            "category_name": it.get("category_name"),
+            "price": str(it["price"]),
+        }
+        for it in valid_items
+    ]
 
     line_items = []
     for item in valid_items:
@@ -237,12 +237,16 @@ def confirm_order(request):
         success_url=request.build_absolute_uri(reverse('order:payment-success')) + '?session_id={CHECKOUT_SESSION_ID}',
         cancel_url=request.build_absolute_uri(reverse('order:payment-cancel')),
         metadata={
-            "order_id": order.id,
+            "customer_name": request.POST.get("customer_name", ""),
+            "customer_email": request.POST.get("customer_email", ""),
+            "customer_venmo": request.POST.get("customer_venmo", ""),
+            "order_items": json.dumps(items_for_metadata),  # Add items to metadata
         }
     )
 
-    return redirect(checkout_session.url, code=303)
+    request.session.pop("current_order_items", None)
 
+    return redirect(checkout_session.url, code=303)
 
 def delete_item(request, product_id, size):
     if request.method == "POST":
