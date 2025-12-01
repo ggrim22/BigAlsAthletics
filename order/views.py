@@ -259,6 +259,9 @@ def delete_item(request, product_id, size):
     return HTMXResponse()
 
 
+from decimal import Decimal
+
+
 def payment_success(request):
     session_id = request.GET.get("session_id")
     if not session_id:
@@ -268,11 +271,29 @@ def payment_success(request):
         session = stripe.checkout.Session.retrieve(session_id)
         order_id = session.metadata.get("order_id")
         order = Order.objects.get(id=order_id)
+
+        total_cost = Decimal("0.00")
+
+        for item in order.items.all():
+            price = item.product_cost or Decimal("0.00")
+
+            if item.size in [Size.ADULT_2X, Size.ADULT_3X]:
+                price += Decimal("2.00")
+            elif item.size == Size.ADULT_4X:
+                price += Decimal("3.00")
+
+            if item.back_name:
+                price += Decimal("2.00")
+
+            total_cost += price * item.quantity
+
     except Exception:
         order = None
+        total_cost = Decimal("0.00")
 
     return render(request, "order/payment-success.html", {
-        "order": order
+        "order": order,
+        "total_cost": total_cost
     })
 
 def payment_cancel(request):
