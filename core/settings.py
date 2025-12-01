@@ -3,6 +3,7 @@ from pathlib import Path
 
 import dj_database_url
 import django_heroku
+import environ
 from decouple import config
 from django.contrib import messages
 from dotenv import load_dotenv
@@ -14,6 +15,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-default-key")
 DEBUG = os.getenv("DEBUG", "False") == "True"
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost").split(",")
+
+
+env = environ.Env(DEBUG=(bool, False))
+environ.Env.read_env()
+
+
+STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY")
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", default="")
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',

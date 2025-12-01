@@ -33,5 +33,8 @@ urlpatterns = [
     path('product/<int:product_id>/sizes/', views.get_variant_sizes, name='get_variant_sizes'),
     path('product/<int:product_id>/price/', views.get_variant_price, name='get_variant_price'),
     path('collection/<int:collection_id>', views.products, name='products'),
+    path("payment-success/", views.payment_success, name="payment-success"),
+    path("payment-cancel/", views.payment_cancel, name="payment-cancel"),
+
 
 ]

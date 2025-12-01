@@ -1,7 +1,7 @@
 from datetime import date
 from decimal import Decimal
 import polars as pl
-
+import stripe
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -10,11 +10,14 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 
+from core import settings
 from core.http import HTMXResponse
 from core.utils import ExcelDownloadResponse
 from .forms import ProductForm, CollectionForm, ColorForm, CategoryForm, ProductVariantForm, CollectionSelectForm, \
     CollectionFilterForm
 from .models import Product, Size, Order, OrderItem, Collection, ProductColor, ProductCategory, ProductVariant
+
+stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
 def is_admin(user):
@@ -150,35 +153,30 @@ def add_item(request):
 
 
 
+
 def confirm_order(request):
     order_items = request.session.get("current_order_items", [])
-    if not order_items:
-        return redirect("order:index")
-
-    if request.method != "POST":
+    if not order_items or request.method != "POST":
         return redirect("order:index")
 
     valid_items = []
+    total_cost = Decimal("0.00")
+
     for item in order_items:
         product = Product.objects.filter(pk=item.get("product_id")).first()
         if not product:
             continue
 
-        back_name = item.get("back_name")
         size = item.get("size")
-        if size not in product.available_sizes:
-            continue
-
+        back_name = item.get("back_name")
         price = Decimal(item.get("price", "0.00"))
 
-        if size == Size.ADULT_2X or size == Size.ADULT_3X:
-            price = price + 2
-
-        if back_name:
-            price = price + 2
-
+        if size in [Size.ADULT_2X, Size.ADULT_3X]:
+            price += 2
         if size == Size.ADULT_4X:
-            price = price + 3
+            price += 3
+        if back_name:
+            price += 2
 
         valid_items.append({
             "product": product,
@@ -191,16 +189,18 @@ def confirm_order(request):
             "back_name": back_name,
         })
 
+        total_cost += price * int(item.get("quantity", 1))
+
     if not valid_items:
         return redirect("order:index")
 
     order = Order.objects.create(
         customer_name=request.POST.get("customer_name", ""),
         customer_email=request.POST.get("customer_email", ""),
-        customer_venmo=request.POST.get("customer_venmo", "")
+        customer_venmo=request.POST.get("customer_venmo", ""),
+        has_paid=False
     )
 
-    total_cost = Decimal("0.00")
     for it in valid_items:
         OrderItem.objects.create(
             order=order,
@@ -212,12 +212,35 @@ def confirm_order(request):
             product_category=it.get("category_name"),
             product_cost=it["price"],
         )
-        total_cost += it["price"] * it["quantity"]
 
-    if "current_order_items" in request.session:
-        del request.session["current_order_items"]
+    request.session.pop("current_order_items", None)
 
-    return render(request, "order/confirmation.html", {"order": order, "total_cost": total_cost})
+    line_items = []
+    for item in valid_items:
+        line_items.append({
+            "price_data": {
+                "currency": "usd",
+                "product_data": {
+                    "name": item["product"].name,
+                    "description": f"Size: {item['size']}, Color: {item['color_name'] or ''}, Custom Name: {item['back_name'] or ''}",
+                },
+                "unit_amount": int(item["price"] * 100),
+            },
+            "quantity": item["quantity"],
+        })
+
+    checkout_session = stripe.checkout.Session.create(
+        payment_method_types=['card'],
+        mode='payment',
+        line_items=line_items,
+        success_url=request.build_absolute_uri(reverse('order:payment-success')) + '?session_id={CHECKOUT_SESSION_ID}',
+        cancel_url=request.build_absolute_uri(reverse('order:payment-cancel')),
+        metadata={
+            "order_id": order.id,
+        }
+    )
+
+    return redirect(checkout_session.url, code=303)
 
 
 def delete_item(request, product_id, size):
@@ -236,6 +259,25 @@ def delete_item(request, product_id, size):
 
     return HTMXResponse()
 
+
+def payment_success(request):
+    session_id = request.GET.get("session_id")
+    if not session_id:
+        return redirect("order:index")
+
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+        order_id = session.metadata.get("order_id")
+        order = Order.objects.get(id=order_id)
+    except Exception:
+        order = None
+
+    return render(request, "order/payment-success.html", {
+        "order": order
+    })
+
+def payment_cancel(request):
+    return render(request, "order/payment-cancel.html")
 
 def view_summary(request):
     order_items = request.session.get("current_order_items", [])
