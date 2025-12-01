@@ -154,30 +154,35 @@ def add_item(request):
 
 
 
-
 def confirm_order(request):
     order_items = request.session.get("current_order_items", [])
-    if not order_items or request.method != "POST":
+    if not order_items:
+        return redirect("order:index")
+
+    if request.method != "POST":
         return redirect("order:index")
 
     valid_items = []
-    total_cost = Decimal("0.00")
-
     for item in order_items:
         product = Product.objects.filter(pk=item.get("product_id")).first()
         if not product:
             continue
 
-        size = item.get("size")
         back_name = item.get("back_name")
+        size = item.get("size")
+        if size not in product.available_sizes:
+            continue
+
         price = Decimal(item.get("price", "0.00"))
 
-        if size in [Size.ADULT_2X, Size.ADULT_3X]:
-            price += 2
-        if size == Size.ADULT_4X:
-            price += 3
+        if size == Size.ADULT_2X or size == Size.ADULT_3X:
+            price = price + 2
+
         if back_name:
-            price += 2
+            price = price + 2
+
+        if size == Size.ADULT_4X:
+            price = price + 3
 
         valid_items.append({
             "product": product,
@@ -190,17 +195,16 @@ def confirm_order(request):
             "back_name": back_name,
         })
 
-        total_cost += price * int(item.get("quantity", 1))
-
     if not valid_items:
         return redirect("order:index")
 
     order = Order.objects.create(
         customer_name=request.POST.get("customer_name", ""),
         customer_email=request.POST.get("customer_email", ""),
-        has_paid=False
+        customer_venmo=request.POST.get("customer_venmo", "")
     )
 
+    total_cost = Decimal("0.00")
     for it in valid_items:
         OrderItem.objects.create(
             order=order,
@@ -212,41 +216,106 @@ def confirm_order(request):
             product_category=it.get("category_name"),
             product_cost=it["price"],
         )
+        total_cost += it["price"] * it["quantity"]
 
-    request.session.pop("current_order_items", None)
+    if "current_order_items" in request.session:
+        del request.session["current_order_items"]
 
-    line_items = []
-    for item in valid_items:
-        line_items.append({
-            "price_data": {
-                "currency": "usd",
-                "product_data": {
-                    "images": [request.build_absolute_uri(item["product"].image.url)],
-                    "name": item["product"].name,
-                    "description": f"Size: {item['size']}, Color: {item['color_name'] or ''}, Custom Name: {item['back_name'] or ''}",
-                },
-                "unit_amount": int(item["price"] * 100),
-            },
-            "quantity": item["quantity"],
-        })
+    return render(request, "order/confirmation.html", {"order": order, "total_cost": total_cost})
 
-    checkout_session = stripe.checkout.Session.create(
-        payment_method_types=['card'],
-        mode='payment',
-        line_items=line_items,
-        success_url=request.build_absolute_uri(reverse('order:payment-success')) + '?session_id={CHECKOUT_SESSION_ID}',
-        cancel_url=request.build_absolute_uri(reverse('order:payment-cancel')),
-        metadata={
-            "order_id": order.id,
-        }
-    )
 
-    order.stripe_session_id = checkout_session.id
-    order.save()
-
-    request.session.pop("current_order_items", None)
-
-    return redirect(checkout_session.url, code=303)
+# def confirm_order(request):
+#     order_items = request.session.get("current_order_items", [])
+#     if not order_items or request.method != "POST":
+#         return redirect("order:index")
+#
+#     valid_items = []
+#     total_cost = Decimal("0.00")
+#
+#     for item in order_items:
+#         product = Product.objects.filter(pk=item.get("product_id")).first()
+#         if not product:
+#             continue
+#
+#         size = item.get("size")
+#         back_name = item.get("back_name")
+#         price = Decimal(item.get("price", "0.00"))
+#
+#         if size in [Size.ADULT_2X, Size.ADULT_3X]:
+#             price += 2
+#         if size == Size.ADULT_4X:
+#             price += 3
+#         if back_name:
+#             price += 2
+#
+#         valid_items.append({
+#             "product": product,
+#             "size": size,
+#             "quantity": int(item.get("quantity", 1)),
+#             "color_name": item.get("color_name"),
+#             "category_name": item.get("category_name"),
+#             "category_id": item.get("category_id"),
+#             "price": price,
+#             "back_name": back_name,
+#         })
+#
+#         total_cost += price * int(item.get("quantity", 1))
+#
+#     if not valid_items:
+#         return redirect("order:index")
+#
+#     order = Order.objects.create(
+#         customer_name=request.POST.get("customer_name", ""),
+#         customer_email=request.POST.get("customer_email", ""),
+#         has_paid=False
+#     )
+#
+#     for it in valid_items:
+#         OrderItem.objects.create(
+#             order=order,
+#             product=it["product"],
+#             back_name=it["back_name"],
+#             size=it["size"],
+#             quantity=it["quantity"],
+#             product_color=it.get("color_name"),
+#             product_category=it.get("category_name"),
+#             product_cost=it["price"],
+#         )
+#
+#     request.session.pop("current_order_items", None)
+#
+#     line_items = []
+#     for item in valid_items:
+#         line_items.append({
+#             "price_data": {
+#                 "currency": "usd",
+#                 "product_data": {
+#                     "images": [request.build_absolute_uri(item["product"].image.url)],
+#                     "name": item["product"].name,
+#                     "description": f"Size: {item['size']}, Color: {item['color_name'] or ''}, Custom Name: {item['back_name'] or ''}",
+#                 },
+#                 "unit_amount": int(item["price"] * 100),
+#             },
+#             "quantity": item["quantity"],
+#         })
+#
+#     checkout_session = stripe.checkout.Session.create(
+#         payment_method_types=['card'],
+#         mode='payment',
+#         line_items=line_items,
+#         success_url=request.build_absolute_uri(reverse('order:payment-success')) + '?session_id={CHECKOUT_SESSION_ID}',
+#         cancel_url=request.build_absolute_uri(reverse('order:payment-cancel')),
+#         metadata={
+#             "order_id": order.id,
+#         }
+#     )
+#
+#     order.stripe_session_id = checkout_session.id
+#     order.save()
+#
+#     request.session.pop("current_order_items", None)
+#
+#     return redirect(checkout_session.url, code=303)
 
 
 def delete_item(request, product_id, size):

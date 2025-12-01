@@ -6,6 +6,7 @@
         <tr>
           <th class="px-4 py-3 text-left text-sm font-semibold">Name</th>
           <th class="px-4 py-3 text-left text-sm font-semibold">Email</th>
+          <th class="px-4 py-3 text-left text-sm font-semibold">Venmo</th>
           <th class="px-4 py-3 text-left text-sm font-semibold">Date</th>
           <th class="px-4 py-3 text-left text-sm font-semibold">Items</th>
           <th class="px-4 py-3 text-left text-sm font-semibold">Paid</th>
@@ -16,6 +17,7 @@
           <tr class="{% cycle 'bg-white' 'bg-gray-50' %} border-b border-gray-200">
             <td class="px-4 py-3 text-sm">{{ order.customer_name }}</td>
             <td class="px-4 py-3 text-sm">{{ order.customer_email }}</td>
+            <td class="px-4 py-3 text-sm">@{{ order.customer_venmo }}</td>
             <td class="px-4 py-3 text-sm">{{ order.created_at|date:"M d, Y h:i a" }}</td>
 
             <!-- Items column -->
