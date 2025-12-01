@@ -268,9 +268,7 @@ def payment_success(request):
         return redirect("order:index")
 
     try:
-        session = stripe.checkout.Session.retrieve(session_id)
-        order_id = session.metadata.get("order_id")
-        order = Order.objects.get(id=order_id)
+        order = Order.objects.get(stripe_session_id=session_id)
 
         total_cost = Decimal("0.00")
 

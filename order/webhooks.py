@@ -31,7 +31,8 @@ def stripe_webhook(request):
             customer_name=session['metadata'].get('customer_name', ''),
             customer_email=session['metadata'].get('customer_email', ''),
             customer_venmo=session['metadata'].get('customer_venmo', ''),
-            has_paid=True
+            has_paid=True,
+            stripe_session_id=session['id']
         )
 
         order_items_json = session['metadata'].get('order_items', '[]')
