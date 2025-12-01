@@ -30,7 +30,6 @@ def stripe_webhook(request):
         order = Order.objects.create(
             customer_name=session['metadata'].get('customer_name', ''),
             customer_email=session['metadata'].get('customer_email', ''),
-            customer_venmo=session['metadata'].get('customer_venmo', ''),
             has_paid=True,
             stripe_session_id=session['id']
         )
