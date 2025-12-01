@@ -195,18 +195,26 @@ def confirm_order(request):
     if not valid_items:
         return redirect("order:index")
 
-    items_for_metadata = [
-        {
-            "product_id": it["product"].id,
-            "back_name": it["back_name"],
-            "size": it["size"],
-            "quantity": it["quantity"],
-            "color_name": it.get("color_name"),
-            "category_name": it.get("category_name"),
-            "price": str(it["price"]),
-        }
-        for it in valid_items
-    ]
+    order = Order.objects.create(
+        customer_name=request.POST.get("customer_name", ""),
+        customer_email=request.POST.get("customer_email", ""),
+        customer_venmo=request.POST.get("customer_venmo", ""),
+        has_paid=False
+    )
+
+    for it in valid_items:
+        OrderItem.objects.create(
+            order=order,
+            product=it["product"],
+            back_name=it["back_name"],
+            size=it["size"],
+            quantity=it["quantity"],
+            product_color=it.get("color_name"),
+            product_category=it.get("category_name"),
+            product_cost=it["price"],
+        )
+
+    request.session.pop("current_order_items", None)
 
     line_items = []
     for item in valid_items:
@@ -214,7 +222,6 @@ def confirm_order(request):
             "price_data": {
                 "currency": "usd",
                 "product_data": {
-                    "images": [request.build_absolute_uri(item["product"].image.url)],
                     "name": item["product"].name,
                     "description": f"Size: {item['size']}, Color: {item['color_name'] or ''}, Custom Name: {item['back_name'] or ''}",
                 },
@@ -230,13 +237,9 @@ def confirm_order(request):
         success_url=request.build_absolute_uri(reverse('order:payment-success')) + '?session_id={CHECKOUT_SESSION_ID}',
         cancel_url=request.build_absolute_uri(reverse('order:payment-cancel')),
         metadata={
-            "customer_name": request.POST.get("customer_name", ""),
-            "customer_email": request.POST.get("customer_email", ""),
-            "order_items": json.dumps(items_for_metadata),
+            "order_id": order.id,
         }
     )
-
-    request.session.pop("current_order_items", None)
 
     return redirect(checkout_session.url, code=303)
 
