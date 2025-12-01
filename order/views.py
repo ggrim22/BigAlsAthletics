@@ -498,7 +498,7 @@ def product_dashboard(request):
 @user_passes_test(is_admin)
 @login_required
 def order_list(request):
-    orders = Order.objects.prefetch_related("items__product").order_by("-created_at")
+    orders = Order.objects.filter(archived=False).prefetch_related("items__product").order_by("-created_at")
     context = {'orders': orders}
     return render(request, "order/partials/_order-list.html", context)
 
@@ -828,3 +828,54 @@ def about(request):
 
 def contact(request):
     return render(request, "order/contact.html")
+
+
+@user_passes_test(is_admin)
+@login_required
+def bulk_delete_orders(request):
+    """Delete multiple orders at once"""
+    if request.method == "POST":
+        order_ids = request.POST.getlist('order_ids[]')
+        if order_ids:
+            Order.objects.filter(id__in=order_ids).delete()
+            messages.success(request, f"Successfully deleted {len(order_ids)} order(s)")
+        return HTMXResponse(trigger="order-items-updated")
+
+    return HttpResponse(status=400)
+
+
+@user_passes_test(is_admin)
+@login_required
+def bulk_archive_orders(request):
+    """Archive multiple orders at once"""
+    if request.method == "POST":
+        order_ids = request.POST.getlist('order_ids[]')
+        if order_ids:
+            Order.objects.filter(id__in=order_ids).update(archived=True)
+            messages.success(request, f"Successfully archived {len(order_ids)} order(s)")
+        return HTMXResponse(trigger="order-items-updated")
+
+    return HttpResponse(status=400)
+
+
+@user_passes_test(is_admin)
+@login_required
+def archived_orders(request):
+    """View archived orders"""
+    orders = Order.objects.filter(archived=True).prefetch_related("items__product").order_by("-created_at")
+    context = {'orders': orders, 'is_archived_view': True}
+    return render(request, "order/order-archive.html", context)
+
+
+@user_passes_test(is_admin)
+@login_required
+def restore_order(request, order_id):
+    """Restore an archived order"""
+    if request.method == "POST":
+        order = get_object_or_404(Order, id=order_id)
+        order.archived = False
+        order.save()
+        messages.success(request, "Order restored successfully")
+        return HTMXResponse(trigger="order-items-updated")
+
+    return HttpResponse(status=400)
