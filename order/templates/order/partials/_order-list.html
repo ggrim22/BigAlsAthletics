@@ -1,13 +1,9 @@
-<!-- order/partials/_order-list.html -->
-
 <script nonce="{{ request.csp_nonce }}">
-    // Pass Django URLs to JavaScript
     window.bulkDeleteUrl = "{% url 'order:bulk_delete_orders' %}";
     window.bulkArchiveUrl = "{% url 'order:bulk_archive_orders' %}";
 </script>
 
 <div id="order-list-container">
-    <!-- Table -->
     <div class="overflow-x-auto shadow-lg rounded-lg border border-gray-200">
         <table class="min-w-full">
             <thead class="bg-stone-600 text-white">
@@ -22,76 +18,17 @@
                     </th>
                     <th class="px-4 py-3 text-left text-sm font-semibold">Name</th>
                     <th class="px-4 py-3 text-left text-sm font-semibold">Email</th>
-                    <th class="px-4 py-3 text-left text-sm font-semibold">Venmo</th>
                     <th class="px-4 py-3 text-left text-sm font-semibold">Date</th>
                     <th class="px-4 py-3 text-left text-sm font-semibold">Items</th>
                     <th class="px-4 py-3 text-left text-sm font-semibold">Paid</th>
                 </tr>
             </thead>
-            <tbody class="bg-white">
-                {% for order in orders %}
-                <tr class="{% cycle 'bg-white' 'bg-gray-50' %} border-b border-gray-200">
-                    <td class="edit-mode-column px-4 py-3" style="display: none;">
-                        <input
-                            type="checkbox"
-                            class="w-5 h-5 accent-stone-600 cursor-pointer order-checkbox"
-                            value="{{ order.id }}"
-                            aria-label="Select order {{ order.id }}"
-                        >
-                    </td>
-                    <td class="px-4 py-3 text-sm">{{ order.customer_name }}</td>
-                    <td class="px-4 py-3 text-sm">{{ order.customer_email }}</td>
-                    <td class="px-4 py-3 text-sm">@{{ order.customer_venmo }}</td>
-                    <td class="px-4 py-3 text-sm">{{ order.created_at|date:"M d, Y h:i a" }}</td>
-
-                    <!-- Items column -->
-                    <td class="px-4 py-3 text-sm">
-                        <button type="button"
-                                class="text-stone-700 font-medium hover:text-stone-900 flex items-center gap-1"
-                                onclick="this.nextElementSibling.classList.toggle('hidden')">
-                            View Items
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                            </svg>
-                        </button>
-                        <ul class="list-disc pl-5 mt-1 space-y-1 hidden">
-                            {% for item in order.items.all %}
-                            <li>
-                                {{ item.quantity }} × {{ item.product_name }} -
-                                {{ item.product_category }} ({{ item.size }})
-                                {% if item.back_name %} – "{{ item.back_name }}"{% endif %}
-                            </li>
-                            {% endfor %}
-                        </ul>
-                    </td>
-
-                    <td class="px-4 py-3 text-center text-sm">
-                        <form method="post"
-                              action="{% url 'order:toggle_paid' order.id %}"
-                              hx-post="{% url 'order:toggle_paid' order.id %}"
-                              hx-trigger="change"
-                              hx-swap="none">
-                            {% csrf_token %}
-                            <input type="checkbox"
-                                   class="w-5 h-5 accent-stone-600 cursor-pointer"
-                                   name="has_paid"
-                                   {% if order.has_paid %}checked{% endif %}
-                                   aria-label="Mark order as paid">
-                        </form>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr class="empty-orders-row">
-                    <td colspan="7" class="px-4 py-8 text-center text-gray-500">
-                        No orders yet.
-                    </td>
-                </tr>
-                {% endfor %}
+            <tbody class="bg-white" id="orders-tbody">
+                {% include 'order/partials/_order-rows.html' %}
             </tbody>
         </table>
     </div>
 
-    <!-- Fixed Action Buttons -->
     <div id="bulkActionButtons"
          class="fixed bottom-8 right-8 flex gap-3 z-50"
          style="display: none;">
@@ -129,4 +66,4 @@
             transform: translateY(0);
         }
     }
-</style
+</style>
