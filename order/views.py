@@ -253,13 +253,14 @@ def confirm_order(request):
             price += 2
 
         valid_items.append({
-            "product": product,
+            "product_id": product.id,
+            "product_name": product.name,
             "size": size,
             "quantity": int(item.get("quantity", 1)),
             "color_name": item.get("color_name"),
             "category_name": item.get("category_name"),
             "category_id": item.get("category_id"),
-            "price": price,
+            "price": str(price),
             "back_name": back_name,
         })
 
@@ -268,40 +269,33 @@ def confirm_order(request):
     if not valid_items:
         return redirect("order:index")
 
-    order = Order.objects.create(
-        customer_name=request.POST.get("customer_name", ""),
-        customer_email=request.POST.get("customer_email", ""),
-        has_paid=False
-    )
-
-    for it in valid_items:
-        OrderItem.objects.create(
-            order=order,
-            product=it["product"],
-            back_name=it["back_name"],
-            size=it["size"],
-            quantity=it["quantity"],
-            product_color=it.get("color_name"),
-            product_category=it.get("category_name"),
-            product_cost=it["price"],
-        )
-
-    request.session.pop("current_order_items", None)
+    customer_data = {
+        "customer_name": request.POST.get("customer_name", ""),
+        "customer_email": request.POST.get("customer_email", ""),
+    }
 
     line_items = []
     for item in valid_items:
+        product = Product.objects.get(pk=item["product_id"])
         line_items.append({
             "price_data": {
                 "currency": "usd",
                 "product_data": {
-                    "images": [request.build_absolute_uri(item["product"].image.url)],
-                    "name": item["product"].name,
+                    "images": [request.build_absolute_uri(product.image.url)],
+                    "name": item["product_name"],
                     "description": f"Size: {item['size']}, Color: {item['color_name'] or ''}, Custom Name: {item['back_name'] or ''}",
                 },
-                "unit_amount": int(item["price"] * 100),
+                "unit_amount": int(Decimal(item["price"]) * 100),
             },
             "quantity": item["quantity"],
         })
+
+
+    metadata = {
+        "customer_name": customer_data["customer_name"],
+        "customer_email": customer_data["customer_email"],
+        "order_items": json.dumps(valid_items),
+    }
 
     checkout_session = stripe.checkout.Session.create(
         payment_method_types=['card'],
@@ -309,13 +303,9 @@ def confirm_order(request):
         line_items=line_items,
         success_url=request.build_absolute_uri(reverse('order:payment-success')) + '?session_id={CHECKOUT_SESSION_ID}',
         cancel_url=request.build_absolute_uri(reverse('order:payment-cancel')),
-        metadata={
-            "order_id": order.id,
-        }
+        metadata=metadata,
+        customer_email=customer_data["customer_email"],  # Pre-fill email in Stripe
     )
-
-    order.stripe_session_id = checkout_session.id
-    order.save()
 
     request.session.pop("current_order_items", None)
 
