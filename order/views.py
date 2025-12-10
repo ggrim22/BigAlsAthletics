@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import date
 from decimal import Decimal
 import polars as pl
@@ -6,8 +7,10 @@ import stripe
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.core.mail import send_mail
+from django.core.paginator import Paginator
 from django.db.models import Sum, Q
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, BadHeaderError
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 
@@ -15,11 +18,12 @@ from core import settings
 from core.http import HTMXResponse
 from core.utils import ExcelDownloadResponse
 from .forms import ProductForm, CollectionForm, ColorForm, CategoryForm, ProductVariantForm, CollectionSelectForm, \
-    CollectionFilterForm
+    CollectionFilterForm, ContactForm
 from .models import Product, Size, Order, OrderItem, Collection, ProductColor, ProductCategory, ProductVariant
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
+logger = logging.getLogger(__name__)
 
 def is_admin(user):
     return user.is_superuser
@@ -154,99 +158,35 @@ def add_item(request):
 
 
 
-def confirm_order(request):
-    order_items = request.session.get("current_order_items", [])
-    if not order_items:
-        return redirect("order:index")
-
-    if request.method != "POST":
-        return redirect("order:index")
-
-    valid_items = []
-    for item in order_items:
-        product = Product.objects.filter(pk=item.get("product_id")).first()
-        if not product:
-            continue
-
-        back_name = item.get("back_name")
-        size = item.get("size")
-        if size not in product.available_sizes:
-            continue
-
-        price = Decimal(item.get("price", "0.00"))
-
-        if size == Size.ADULT_2X or size == Size.ADULT_3X:
-            price = price + 2
-
-        if back_name:
-            price = price + 2
-
-        if size == Size.ADULT_4X:
-            price = price + 3
-
-        valid_items.append({
-            "product": product,
-            "size": size,
-            "quantity": int(item.get("quantity", 1)),
-            "color_name": item.get("color_name"),
-            "category_name": item.get("category_name"),
-            "category_id": item.get("category_id"),
-            "price": price,
-            "back_name": back_name,
-        })
-
-    if not valid_items:
-        return redirect("order:index")
-
-    order = Order.objects.create(
-        customer_name=request.POST.get("customer_name", ""),
-        customer_email=request.POST.get("customer_email", ""),
-        customer_venmo=request.POST.get("customer_venmo", "")
-    )
-
-    total_cost = Decimal("0.00")
-    for it in valid_items:
-        OrderItem.objects.create(
-            order=order,
-            product=it["product"],
-            back_name=it["back_name"],
-            size=it["size"],
-            quantity=it["quantity"],
-            product_color=it.get("color_name"),
-            product_category=it.get("category_name"),
-            product_cost=it["price"],
-        )
-        total_cost += it["price"] * it["quantity"]
-
-    if "current_order_items" in request.session:
-        del request.session["current_order_items"]
-
-    return render(request, "order/confirmation.html", {"order": order, "total_cost": total_cost})
-
-
 # def confirm_order(request):
 #     order_items = request.session.get("current_order_items", [])
-#     if not order_items or request.method != "POST":
+#     if not order_items:
+#         return redirect("order:index")
+#
+#     if request.method != "POST":
 #         return redirect("order:index")
 #
 #     valid_items = []
-#     total_cost = Decimal("0.00")
-#
 #     for item in order_items:
 #         product = Product.objects.filter(pk=item.get("product_id")).first()
 #         if not product:
 #             continue
 #
-#         size = item.get("size")
 #         back_name = item.get("back_name")
+#         size = item.get("size")
+#         if size not in product.available_sizes:
+#             continue
+#
 #         price = Decimal(item.get("price", "0.00"))
 #
-#         if size in [Size.ADULT_2X, Size.ADULT_3X]:
-#             price += 2
-#         if size == Size.ADULT_4X:
-#             price += 3
+#         if size == Size.ADULT_2X or size == Size.ADULT_3X:
+#             price = price + 2
+#
 #         if back_name:
-#             price += 2
+#             price = price + 2
+#
+#         if size == Size.ADULT_4X:
+#             price = price + 3
 #
 #         valid_items.append({
 #             "product": product,
@@ -259,17 +199,16 @@ def confirm_order(request):
 #             "back_name": back_name,
 #         })
 #
-#         total_cost += price * int(item.get("quantity", 1))
-#
 #     if not valid_items:
 #         return redirect("order:index")
 #
 #     order = Order.objects.create(
 #         customer_name=request.POST.get("customer_name", ""),
 #         customer_email=request.POST.get("customer_email", ""),
-#         has_paid=False
+#         customer_venmo=request.POST.get("customer_venmo", "")
 #     )
 #
+#     total_cost = Decimal("0.00")
 #     for it in valid_items:
 #         OrderItem.objects.create(
 #             order=order,
@@ -281,41 +220,106 @@ def confirm_order(request):
 #             product_category=it.get("category_name"),
 #             product_cost=it["price"],
 #         )
+#         total_cost += it["price"] * it["quantity"]
 #
-#     request.session.pop("current_order_items", None)
+#     if "current_order_items" in request.session:
+#         del request.session["current_order_items"]
 #
-#     line_items = []
-#     for item in valid_items:
-#         line_items.append({
-#             "price_data": {
-#                 "currency": "usd",
-#                 "product_data": {
-#                     "images": [request.build_absolute_uri(item["product"].image.url)],
-#                     "name": item["product"].name,
-#                     "description": f"Size: {item['size']}, Color: {item['color_name'] or ''}, Custom Name: {item['back_name'] or ''}",
-#                 },
-#                 "unit_amount": int(item["price"] * 100),
-#             },
-#             "quantity": item["quantity"],
-#         })
-#
-#     checkout_session = stripe.checkout.Session.create(
-#         payment_method_types=['card'],
-#         mode='payment',
-#         line_items=line_items,
-#         success_url=request.build_absolute_uri(reverse('order:payment-success')) + '?session_id={CHECKOUT_SESSION_ID}',
-#         cancel_url=request.build_absolute_uri(reverse('order:payment-cancel')),
-#         metadata={
-#             "order_id": order.id,
-#         }
-#     )
-#
-#     order.stripe_session_id = checkout_session.id
-#     order.save()
-#
-#     request.session.pop("current_order_items", None)
-#
-#     return redirect(checkout_session.url, code=303)
+#     return render(request, "order/confirmation.html", {"order": order, "total_cost": total_cost})
+
+
+def confirm_order(request):
+    order_items = request.session.get("current_order_items", [])
+    if not order_items or request.method != "POST":
+        return redirect("order:index")
+
+    valid_items = []
+    total_cost = Decimal("0.00")
+
+    for item in order_items:
+        product = Product.objects.filter(pk=item.get("product_id")).first()
+        if not product:
+            continue
+
+        size = item.get("size")
+        back_name = item.get("back_name")
+        price = Decimal(item.get("price", "0.00"))
+
+        if size in [Size.ADULT_2X, Size.ADULT_3X]:
+            price += 2
+        if size == Size.ADULT_4X:
+            price += 3
+        if back_name:
+            price += 2
+
+        valid_items.append({
+            "product": product,
+            "size": size,
+            "quantity": int(item.get("quantity", 1)),
+            "color_name": item.get("color_name"),
+            "category_name": item.get("category_name"),
+            "category_id": item.get("category_id"),
+            "price": price,
+            "back_name": back_name,
+        })
+
+        total_cost += price * int(item.get("quantity", 1))
+
+    if not valid_items:
+        return redirect("order:index")
+
+    order = Order.objects.create(
+        customer_name=request.POST.get("customer_name", ""),
+        customer_email=request.POST.get("customer_email", ""),
+        has_paid=False
+    )
+
+    for it in valid_items:
+        OrderItem.objects.create(
+            order=order,
+            product=it["product"],
+            back_name=it["back_name"],
+            size=it["size"],
+            quantity=it["quantity"],
+            product_color=it.get("color_name"),
+            product_category=it.get("category_name"),
+            product_cost=it["price"],
+        )
+
+    request.session.pop("current_order_items", None)
+
+    line_items = []
+    for item in valid_items:
+        line_items.append({
+            "price_data": {
+                "currency": "usd",
+                "product_data": {
+                    "images": [request.build_absolute_uri(item["product"].image.url)],
+                    "name": item["product"].name,
+                    "description": f"Size: {item['size']}, Color: {item['color_name'] or ''}, Custom Name: {item['back_name'] or ''}",
+                },
+                "unit_amount": int(item["price"] * 100),
+            },
+            "quantity": item["quantity"],
+        })
+
+    checkout_session = stripe.checkout.Session.create(
+        payment_method_types=['card'],
+        mode='payment',
+        line_items=line_items,
+        success_url=request.build_absolute_uri(reverse('order:payment-success')) + '?session_id={CHECKOUT_SESSION_ID}',
+        cancel_url=request.build_absolute_uri(reverse('order:payment-cancel')),
+        metadata={
+            "order_id": order.id,
+        }
+    )
+
+    order.stripe_session_id = checkout_session.id
+    order.save()
+
+    request.session.pop("current_order_items", None)
+
+    return redirect(checkout_session.url, code=303)
 
 
 def delete_item(request, product_id, size):
@@ -420,17 +424,46 @@ def shopping_cart(request):
     order_items = request.session.get("current_order_items", [])
     collection_id = request.session.get("selected_collection_id")
     collection = None
+    total_cost = Decimal("0.00")
 
     if collection_id:
         from .models import Collection
         collection = Collection.objects.filter(pk=collection_id).first()
 
+    enriched_items = []
+    for item in order_items:
+        try:
+            product = Product.objects.get(id=item["product_id"])
+            price = Decimal(item.get("price", "0.00"))
+
+            # Apply size upcharges
+            size = item.get("size")
+            if size in [Size.ADULT_2X, Size.ADULT_3X]:
+                price += Decimal("2.00")
+            elif size == Size.ADULT_4X:
+                price += Decimal("3.00")
+
+            # Apply back name upcharge
+            if item.get("back_name"):
+                price += Decimal("2.00")
+
+            quantity = int(item.get("quantity", 1))
+            total_cost += price * quantity
+
+            enriched_items.append({
+                **item,
+                "product": product,
+                "product_price": price,
+            })
+        except Product.DoesNotExist:
+            continue
+
     context = {
-        "order_items": order_items,
+        "order_items": enriched_items,
         "collection": collection,
+        "total_cost": total_cost,
     }
     return render(request, "order/partials/_shopping-cart.html", context)
-
 
 @user_passes_test(is_admin)
 @login_required
@@ -498,10 +531,24 @@ def product_dashboard(request):
 @user_passes_test(is_admin)
 @login_required
 def order_list(request):
-    orders = Order.objects.filter(archived=False).prefetch_related("items__product").order_by("-created_at")
-    context = {'orders': orders}
-    return render(request, "order/partials/_order-list.html", context)
+    page = request.GET.get('page', 1)
+    orders_per_page = 20
 
+    all_orders = Order.objects.filter(archived=False).prefetch_related("items__product").order_by("-created_at")
+
+    paginator = Paginator(all_orders, orders_per_page)
+    orders = paginator.get_page(page)
+
+    context = {
+        'orders': orders,
+        'has_next': orders.has_next(),
+        'next_page': orders.next_page_number() if orders.has_next() else None,
+    }
+
+    if request.headers.get('HX-Request') and int(page) > 1:
+        return render(request, "order/partials/_order-rows.html", context)
+
+    return render(request, "order/partials/_order-list.html", context)
 
 @user_passes_test(is_admin)
 @login_required
@@ -515,9 +562,7 @@ def toggle_paid(request, order_id):
 @user_passes_test(is_admin)
 @login_required
 def order_dashboard(request):
-    orders = Order.objects.all()
-    context = {'orders': orders}
-    return render(request, "order/order-dashboard.html", context)
+    return render(request, "order/order-dashboard.html")
 
 
 @user_passes_test(is_admin)
@@ -528,6 +573,10 @@ def summary(request):
 
     summary_qs = (
         OrderItem.objects
+        .filter(
+            order__archived=False,
+            product__collection__active=True
+        )
         .values('product_name', 'product_category', 'product_color', 'product__collection')
         .annotate(
             **{
@@ -575,6 +624,7 @@ def summary(request):
 
     return render(request, "order/summary.html", context)
 
+
 @user_passes_test(is_admin)
 @login_required
 def collection_dashboard(request):
@@ -596,6 +646,7 @@ def collection_create(request):
 
     context = {'form': form}
     return render(request, "order/modals/collection-create.html", context)
+
 
 @user_passes_test(is_admin)
 @login_required
@@ -788,11 +839,15 @@ def get_variant_sizes(request, product_id):
         "current_size": None
     })
 
+
 def get_variant_price(request, product_id):
     category_id = request.GET.get('category')
     color_id = request.GET.get('color')
     size = request.GET.get('size')
     back_name = request.GET.get('back_name')
+
+    if not category_id or category_id == '':
+        return HttpResponse('<i class="bi bi-currency-dollar"></i>0.00')
 
     variant_qs = ProductVariant.objects.filter(product_id=product_id)
 
@@ -809,9 +864,9 @@ def get_variant_price(request, product_id):
         variant = variant_qs.first()
 
     if not variant:
-        variant = ProductVariant.objects.filter(product_id=product_id).first()
+        return HttpResponse('<i class="bi bi-currency-dollar"></i>0.00')
 
-    price = variant.price if variant else 0.00
+    price = variant.price
 
     if back_name:
         price += 2
@@ -821,13 +876,12 @@ def get_variant_price(request, product_id):
     elif size == Size.ADULT_4X:
         price += 3
 
-    return HttpResponse(f"${price:.2f}")
+    return HttpResponse(f'<i class="bi bi-currency-dollar"></i>{price:.2f}')
+
 
 def about(request):
     return render(request, "order/about.html")
 
-def contact(request):
-    return render(request, "order/contact.html")
 
 
 @user_passes_test(is_admin)
@@ -879,3 +933,53 @@ def restore_order(request, order_id):
         return HTMXResponse(trigger="order-items-updated")
 
     return HttpResponse(status=400)
+
+
+def contact_page(request):
+
+    if request.method == 'POST':
+        form = ContactForm(request.POST)
+
+        if form.is_valid():
+            user_email = form.cleaned_data['email']
+            user_message = form.cleaned_data['message']
+
+            subject = f"New Contact Form Submission from {user_email}"
+            message = f"""
+                    You have received a new message from the Big Al's Athletics contact form.
+                    
+                    From: {user_email}
+                    
+                    Message:
+                    {user_message}
+                    
+                    ---
+                    This message was sent via the contact form on your website.
+                                """
+
+            try:
+                # Send email
+                send_mail(
+                    subject=subject,
+                    message=message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[settings.CONTACT_EMAIL],
+                    fail_silently=False,
+                )
+
+                messages.success(request, 'Your message has been sent successfully! We\'ll get back to you soon.')
+                logger.info(f"Contact form submitted by {user_email}")
+                return redirect('order:contact')
+
+            except BadHeaderError:
+                messages.error(request, 'Invalid header found. Please try again.')
+                logger.error(f"Bad header in contact form from {user_email}")
+
+            except Exception as e:
+                messages.error(request, 'An error occurred while sending your message. Please try again later.')
+                logger.error(f"Error sending contact email: {str(e)}")
+
+    else:
+        form = ContactForm()
+
+    return render(request, 'order/contact.html', {'form': form})
