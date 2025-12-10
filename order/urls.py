@@ -36,11 +36,10 @@ urlpatterns = [
     path("payment-success/", views.payment_success, name="payment-success"),
     path("payment-cancel/", views.payment_cancel, name="payment-cancel"),
     path("about", views.about, name='about'),
-    path("contact", views.contact, name='contact'),
     path('bulk-delete/', views.bulk_delete_orders, name='bulk_delete_orders'),
     path('bulk-archive/', views.bulk_archive_orders, name='bulk_archive_orders'),
     path('archived/', views.archived_orders, name='archived_orders'),
     path('restore/<int:order_id>/', views.restore_order, name='restore_order'),
-
+    path('contact-page', views.contact_page, name='contact'),
 
 ]

@@ -1,4 +1,5 @@
 from django import forms
+from django.core.validators import EmailValidator
 from django.forms import modelformset_factory
 from .models import OrderItem, Product, Collection, Size, ProductCategory, ProductColor, ProductVariant
 
@@ -96,3 +97,31 @@ class CollectionFilterForm(forms.Form):
             "hx-push-url": "true",
         })
     )
+
+
+class ContactForm(forms.Form):
+    email = forms.EmailField(
+        max_length=254,
+        required=True,
+        validators=[EmailValidator(message="Please enter a valid email address.")],
+        widget=forms.EmailInput(attrs={
+            'placeholder': 'your.email@example.com',
+            'class': 'w-full px-6 py-4 text-lg bg-stone-50 border-2 border-stone-200 rounded-2xl'
+        })
+    )
+
+    message = forms.CharField(
+        max_length=2000,
+        required=True,
+        widget=forms.Textarea(attrs={
+            'placeholder': 'Tell us what\'s on your mind...',
+            'rows': 8,
+            'class': 'w-full px-6 py-4 text-lg bg-stone-50 border-2 border-stone-200 rounded-2xl'
+        })
+    )
+
+    def clean_message(self):
+        message = self.cleaned_data.get('message')
+        if len(message) < 10:
+            raise forms.ValidationError("Please provide a more detailed message (at least 10 characters).")
+        return message

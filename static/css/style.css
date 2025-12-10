@@ -73,3 +73,30 @@
 .fade-in-up {
   animation: fadeInUp 1s ease-out forwards;
 }
+
+
+#cart-items-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+#cart-items-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+#cart-items-container::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+#cart-items-container::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+#cart-sidebar {
+  z-index: 9999;
+}
+
+#cart-overlay {
+  z-index: 9998;
+}

@@ -1,27 +1,30 @@
-htmx.on("messages", (event) => {
-  console.log(event.detail.value)
-})
+// Listen for HTMX "messages" event only once
+htmx.on("messages", (e) => {
+  const messages = e.detail.value;
+
+  // If you want logging, uncomment this:
+  // console.log(messages);
+
+  messages.forEach(createToast);
+});
+
 function createToast(message) {
   // Clone the template
-  const element = htmx.find("[data-toast-template]").cloneNode(true)
+  const element = htmx.find("[data-toast-template]").cloneNode(true);
 
   // Remove the data-toast-template attribute
-  delete element.dataset.toastTemplate
+  delete element.dataset.toastTemplate;
 
-  // Set the CSS class
-  element.className += " " + message.tags
+  // Apply CSS classes (Bootstrap alert classes)
+  element.className += " " + message.tags;
 
-  // Set the text
-  htmx.find(element, "[data-toast-body]").innerText = message.message
+  // Insert the message text
+  htmx.find(element, "[data-toast-body]").innerText = message.message;
 
-  // Add the new element to the container
-  htmx.find("[data-toast-container]").appendChild(element)
+  // Add the toast to the container
+  htmx.find("[data-toast-container]").appendChild(element);
 
-  // Show the toast using Bootstrap's API
-  const toast = new bootstrap.Toast(element, { delay: 1500 })
-  toast.show()
+  // Show with Bootstrap API
+  const toast = new bootstrap.Toast(element, { delay: 1500 });
+  toast.show();
 }
-
-htmx.on("messages", (e) => {
-  e.detail.value.forEach(createToast)
-})

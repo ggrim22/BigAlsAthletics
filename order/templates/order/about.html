@@ -1,1 +1,98 @@
-<h1>Coming Soon...</h1>
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="min-h-screen bg-stone-200">
+  <div class="container mx-auto px-6 py-14 lg:py-20">
+    <div class="grid lg:grid-cols-2 gap-10 lg:gap-14 items-center max-w-6xl mx-auto">
+
+      <!-- Left Side - Text Content -->
+      <div class="space-y-6 order-2 lg:order-1">
+
+        <!-- Badge -->
+        <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-stone-800 rounded-full text-white text-xs font-medium shadow-md">
+          <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+          Crafting Excellence Since Day One
+        </div>
+
+        <!-- Title -->
+        <h1 class="text-4xl lg:text-5xl font-black text-stone-900 leading-tight">
+          About Us
+        </h1>
+
+        <!-- Text Content -->
+        <div class="space-y-4">
+          <p class="text-gray-700 text-base leading-relaxed">
+            Welcome to <span class="text-stone-900 font-semibold">Big Al's Athletics</span>, your trusted partner for custom apparel in Indiana. For more than 20 years, we’ve proudly served local schools, businesses, and organizations with high-quality shirts designed to bring teams, events, and communities together.
+          </p>
+
+          <p class="text-gray-700 text-base leading-relaxed">
+            Our story began in New Castle, Indiana, with a simple mission: to provide reliable, affordable, and great-looking apparel for the events that matter most. From school spirit wear to business promotions and community fundraisers, we’re here to help you bring your design ideas to life.
+          </p>
+
+          <p class="text-gray-700 text-base leading-relaxed">
+            At Big Al’s Athletics, we understand that every shirt tells a story. That’s why we focus on quality materials, clean printing, and dependable service—so your group can look its best whether you’re cheering from the stands, representing your workplace, or celebrating a special event.
+          </p>
+
+          <p class="text-gray-700 text-base leading-relaxed">
+            We’re more than just a T-shirt shop—we’re a local partner committed to supporting our community. Join us and discover why schools and businesses across Indiana continue to choose Big Al’s for their apparel needs.
+          </p>
+        </div>
+
+        <!-- CTA Buttons -->
+        <div class="flex flex-wrap gap-3 pt-2">
+          <a href="{% url 'order:contact' %}"
+             class="group px-6 py-3 bg-stone-800 hover:bg-stone-900 text-white font-bold rounded-xl transition-all duration-300 shadow-md hover:shadow-lg hover:scale-[1.03] active:scale-95 flex items-center gap-2">
+            Get In Touch
+            <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+          </a>
+
+          <a href="{% url 'order:index' %}"
+             class="px-6 py-3 bg-white hover:bg-gray-50 border-2 border-stone-800 text-stone-900 font-bold rounded-xl transition-all duration-300 hover:scale-[1.03] active:scale-95 shadow-md">
+            Explore Collections
+          </a>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-3 gap-4 pt-6 border-t border-stone-300">
+          <div>
+            <div class="text-2xl font-black text-stone-900 mb-1">100+</div>
+            <div class="text-gray-600 text-xs">Organizations Served</div>
+          </div>
+          <div>
+            <div class="text-2xl font-black text-stone-900 mb-1">500,000+</div>
+            <div class="text-gray-600 text-xs">Shirts Printed</div>
+          </div>
+          <div>
+            <div class="text-2xl font-black text-stone-900 mb-1">5★</div>
+            <div class="text-gray-600 text-xs">Rating</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Side - Image -->
+      <div class="order-1 lg:order-2">
+        <div class="relative rounded-2xl overflow-hidden shadow-xl">
+          <img src="{% static 'images/collage1.png' %}"
+               alt="Big Al's Athletics"
+               class="w-full h-[480px] object-cover">
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes pulse {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.3; }
+}
+
+.animate-pulse {
+  animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+</style>
+{% endblock %}
