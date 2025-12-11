@@ -274,11 +274,10 @@ def confirm_order(request):
         "customer_email": request.POST.get("customer_email", ""),
     }
 
-    # CREATE PENDING ORDER IN DATABASE
     pending_order = Order.objects.create(
         customer_name=customer_data["customer_name"],
         customer_email=customer_data["customer_email"],
-        pending_items=valid_items,  # Store items temporarily
+        pending_items=valid_items,
         has_paid=False,
     )
 
@@ -298,7 +297,6 @@ def confirm_order(request):
             "quantity": item["quantity"],
         })
 
-    # SIMPLIFIED METADATA - ONLY PASS ORDER_ID
     metadata = {
         "order_id": pending_order.order_id,
     }
