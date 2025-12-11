@@ -63,11 +63,17 @@ def stripe_webhook(request):
                 color = metadata.get('color', '')
                 back_name = metadata.get('back_name', '')
                 category = metadata.get('category', '')
+                product_id = metadata.get('product_id', '')  # ADD THIS - we need to store product_id in metadata
 
                 unit_price = Decimal(line_item.amount_total) / 100 / line_item.quantity
 
+                product = None
+                if product_id:
+                    product = Product.objects.filter(pk=product_id).first()
+
                 order_item = OrderItem.objects.create(
                     order=order,
+                    product=product,
                     product_name=product_name,
                     size=size,
                     quantity=line_item.quantity,

@@ -285,6 +285,7 @@ def confirm_order(request):
                     "name": item["product_name"],
                     "description": f"Size: {item['size']}, Color: {item['color_name'] or ''}, Category: {item['category_name'] or ''}, Custom Name: {item['back_name'] or ''}",
                     "metadata": {
+                        "product_id": str(item["product_id"]),
                         "size": item['size'],
                         "color": item['color_name'] or '',
                         "category": item['category_name'] or '',
@@ -376,11 +377,20 @@ def payment_success(request):
                 color = metadata.get('color', '')
                 back_name = metadata.get('back_name', '')
                 category = metadata.get('category', '')
+                product_id = metadata.get('product_id', '')  # Get product_id from metadata
 
                 unit_price = Decimal(line_item.amount_total) / 100 / line_item.quantity
 
+                product = None
+                if product_id:
+                    try:
+                        product = Product.objects.get(pk=int(product_id))
+                    except (Product.DoesNotExist, ValueError):
+                        product = None
+
                 OrderItem.objects.create(
                     order=order,
+                    product=product,
                     product_name=product_name,
                     size=size,
                     quantity=line_item.quantity,
