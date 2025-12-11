@@ -351,45 +351,47 @@ def payment_success(request):
                 has_paid=True,
             )
 
-            line_items = stripe.checkout.Session.list_line_items(session_id, limit=100)
+            line_items = stripe.checkout.Session.list_line_items(
+                session_id,
+                limit=100,
+                expand=['data.price.product']
+            )
 
             for line_item in line_items.data:
-                description = line_item.description or ""
+                product_name = ""
+                if hasattr(line_item.price, 'product') and isinstance(line_item.price.product, stripe.Product):
+                    product_name = line_item.price.product.name
 
+                description = line_item.description or ""
                 size = ""
                 color = ""
                 back_name = ""
 
-                if "Size: " in description:
-                    size = description.split("Size: ")[1].split(",")[0].strip()
-                if "Color: " in description:
-                    color = description.split("Color: ")[1].split(",")[0].strip()
-                if "Custom Name: " in description:
-                    back_name = description.split("Custom Name: ")[1].strip()
+                if description:
+                    parts = description.split(', ')
+                    for part in parts:
+                        if part.startswith('Size: '):
+                            size = part.replace('Size: ', '').strip()
+                        elif part.startswith('Color: '):
+                            color = part.replace('Color: ', '').strip()
+                        elif part.startswith('Custom Name: '):
+                            back_name = part.replace('Custom Name: ', '').strip()
+
+                unit_price = Decimal(line_item.amount_total) / 100 / line_item.quantity
 
                 OrderItem.objects.create(
                     order=order,
-                    product_name=line_item.description.split(" - ")[
-                        0] if " - " in description else line_item.description,
+                    product_name=product_name,
                     size=size,
                     quantity=line_item.quantity,
                     product_color=color,
-                    product_cost=Decimal(line_item.amount_total) / 100 / line_item.quantity,
+                    product_cost=unit_price,
                     back_name=back_name if back_name else "",
                 )
 
         total_cost = Decimal("0.00")
         for item in order.items.all():
             price = item.product_cost or Decimal("0.00")
-
-            if item.size in [Size.ADULT_2X, Size.ADULT_3X]:
-                price += Decimal("2.00")
-            elif item.size == Size.ADULT_4X:
-                price += Decimal("3.00")
-
-            if item.back_name:
-                price += Decimal("2.00")
-
             total_cost += price * item.quantity
 
     except Exception as e:
@@ -400,6 +402,7 @@ def payment_success(request):
         "order": order,
         "total_cost": total_cost
     })
+
 
 def payment_cancel(request):
     return render(request, "order/payment-cancel.html")
