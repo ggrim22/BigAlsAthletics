@@ -274,6 +274,14 @@ def confirm_order(request):
         "customer_email": request.POST.get("customer_email", ""),
     }
 
+    # CREATE PENDING ORDER IN DATABASE
+    pending_order = Order.objects.create(
+        customer_name=customer_data["customer_name"],
+        customer_email=customer_data["customer_email"],
+        pending_items=valid_items,  # Store items temporarily
+        has_paid=False,
+    )
+
     line_items = []
     for item in valid_items:
         product = Product.objects.get(pk=item["product_id"])
@@ -290,11 +298,9 @@ def confirm_order(request):
             "quantity": item["quantity"],
         })
 
-
+    # SIMPLIFIED METADATA - ONLY PASS ORDER_ID
     metadata = {
-        "customer_name": customer_data["customer_name"],
-        "customer_email": customer_data["customer_email"],
-        "order_items": json.dumps(valid_items),
+        "order_id": pending_order.order_id,
     }
 
     checkout_session = stripe.checkout.Session.create(
@@ -304,8 +310,11 @@ def confirm_order(request):
         success_url=request.build_absolute_uri(reverse('order:payment-success')) + '?session_id={CHECKOUT_SESSION_ID}',
         cancel_url=request.build_absolute_uri(reverse('order:payment-cancel')),
         metadata=metadata,
-        customer_email=customer_data["customer_email"],  # Pre-fill email in Stripe
+        customer_email=customer_data["customer_email"],
     )
+
+    pending_order.stripe_session_id = checkout_session.id
+    pending_order.save()
 
     request.session.pop("current_order_items", None)
 
@@ -335,10 +344,32 @@ def payment_success(request):
         return redirect("order:index")
 
     try:
-        order = Order.objects.get(stripe_session_id=session_id)
+        session = stripe.checkout.Session.retrieve(session_id)
+        order_id = session.metadata.get('order_id')
+
+        order = Order.objects.get(order_id=order_id)
+
+        if order.pending_items and not order.has_paid:
+            order.has_paid = True
+
+            for item in order.pending_items:
+                OrderItem.objects.create(
+                    order=order,
+                    product_id=item["product_id"],
+                    product_name=item["product_name"],
+                    size=item["size"],
+                    quantity=item["quantity"],
+                    product_color=item["color_name"],
+                    product_category=item["category_name"],
+                    category_id=item.get("category_id"),
+                    product_cost=Decimal(item["price"]),
+                    back_name=item.get("back_name", ""),
+                )
+
+            order.pending_items = None
+            order.save()
 
         total_cost = Decimal("0.00")
-
         for item in order.items.all():
             price = item.product_cost or Decimal("0.00")
 
@@ -352,7 +383,7 @@ def payment_success(request):
 
             total_cost += price * item.quantity
 
-    except Exception:
+    except Exception as e:
         order = None
         total_cost = Decimal("0.00")
 
