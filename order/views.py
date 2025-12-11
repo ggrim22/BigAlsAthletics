@@ -277,7 +277,6 @@ def confirm_order(request):
     line_items = []
     for item in valid_items:
         product = Product.objects.get(pk=item["product_id"])
-        # UPDATED: Include category in description
         line_items.append({
             "price_data": {
                 "currency": "usd",
@@ -285,6 +284,12 @@ def confirm_order(request):
                     "images": [request.build_absolute_uri(product.image.url)],
                     "name": item["product_name"],
                     "description": f"Size: {item['size']}, Color: {item['color_name'] or ''}, Category: {item['category_name'] or ''}, Custom Name: {item['back_name'] or ''}",
+                    "metadata": {
+                        "size": item['size'],
+                        "color": item['color_name'] or '',
+                        "category": item['category_name'] or '',
+                        "back_name": item['back_name'] or '',
+                    }
                 },
                 "unit_amount": int(Decimal(item["price"]) * 100),
             },
@@ -316,6 +321,8 @@ def confirm_order(request):
     request.session.pop("current_order_items", None)
 
     return redirect(checkout_session.url, code=303)
+
+
 def delete_item(request, product_id, size):
     if request.method == "POST":
         order_items = request.session.get("current_order_items", [])
@@ -361,24 +368,14 @@ def payment_success(request):
                 product_name = ""
                 if hasattr(line_item.price, 'product') and isinstance(line_item.price.product, stripe.Product):
                     product_name = line_item.price.product.name
+                    metadata = line_item.price.product.metadata if hasattr(line_item.price.product, 'metadata') else {}
+                else:
+                    metadata = {}
 
-                description = line_item.description or ""
-                size = ""
-                color = ""
-                back_name = ""
-                category = ""
-
-                if description:
-                    parts = description.split(', ')
-                    for part in parts:
-                        if part.startswith('Size: '):
-                            size = part.replace('Size: ', '').strip()
-                        elif part.startswith('Color: '):
-                            color = part.replace('Color: ', '').strip()
-                        elif part.startswith('Custom Name: '):
-                            back_name = part.replace('Custom Name: ', '').strip()
-                        elif part.startswith('Category: '):
-                            category = part.replace('Category: ', '').strip()
+                size = metadata.get('size', '')
+                color = metadata.get('color', '')
+                back_name = metadata.get('back_name', '')
+                category = metadata.get('category', '')
 
                 unit_price = Decimal(line_item.amount_total) / 100 / line_item.quantity
 
@@ -399,6 +396,9 @@ def payment_success(request):
             total_cost += price * item.quantity
 
     except Exception as e:
+        print(f"Payment success error: {e}")
+        import traceback
+        traceback.print_exc()
         order = None
         total_cost = Decimal("0.00")
 

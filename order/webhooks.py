@@ -53,26 +53,16 @@ def stripe_webhook(request):
 
             for line_item in line_items.data:
                 product_name = ""
+                metadata = {}
+
                 if hasattr(line_item.price, 'product') and isinstance(line_item.price.product, stripe.Product):
                     product_name = line_item.price.product.name
+                    metadata = line_item.price.product.metadata if hasattr(line_item.price.product, 'metadata') else {}
 
-                description = line_item.description or ""
-                size = ""
-                color = ""
-                back_name = ""
-                category = ""
-
-                if description:
-                    parts = description.split(', ')
-                    for part in parts:
-                        if part.startswith('Size: '):
-                            size = part.replace('Size: ', '').strip()
-                        elif part.startswith('Color: '):
-                            color = part.replace('Color: ', '').strip()
-                        elif part.startswith('Custom Name: '):
-                            back_name = part.replace('Custom Name: ', '').strip()
-                        elif part.startswith('Category: '):  # ADD THIS
-                            category = part.replace('Category: ', '').strip()
+                size = metadata.get('size', '')
+                color = metadata.get('color', '')
+                back_name = metadata.get('back_name', '')
+                category = metadata.get('category', '')
 
                 unit_price = Decimal(line_item.amount_total) / 100 / line_item.quantity
 
