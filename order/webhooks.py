@@ -31,64 +31,64 @@ def stripe_webhook(request):
     if event['type'] == 'checkout.session.completed':
         session = event['data']['object']
 
-        # Get order_id from metadata instead of parsing order_items JSON
-        order_id = session['metadata'].get('order_id')
-
-        if not order_id:
-            logger.error(f"No order_id found in session {session['id']} metadata")
-            return HttpResponse(status=400)
+        customer_name = session['metadata'].get('customer_name', '')
+        customer_email = session['metadata'].get('customer_email', '')
 
         try:
-            order = Order.objects.get(order_id=order_id)
+            order = Order.objects.create(
+                customer_name=customer_name,
+                customer_email=customer_email,
+                stripe_session_id=session['id'],
+                has_paid=True,
+            )
 
-            if order.has_paid and not order.pending_items:
-                logger.info(f"Order {order.id} already processed, skipping webhook")
-                return HttpResponse(status=200)
-
-            order.has_paid = True
+            line_items = stripe.checkout.Session.list_line_items(session['id'], limit=100)
 
             total = Decimal('0.00')
             items_list = []
 
-            if order.pending_items:
-                for item_data in order.pending_items:
-                    product = Product.objects.filter(pk=item_data.get("product_id")).first()
-                    if not product:
-                        logger.warning(f"Product {item_data.get('product_id')} not found for order")
-                        continue
+            for line_item in line_items.data:
+                description = line_item.description or ""
+                product_name = line_item.description.split(" - ")[0] if " - " in description else line_item.description
 
-                    order_item = OrderItem.objects.create(
-                        order=order,
-                        product=product,
-                        back_name=item_data.get("back_name", ""),
-                        size=item_data.get("size"),
-                        quantity=item_data.get("quantity", 1),
-                        product_color=item_data.get("color_name"),
-                        product_category=item_data.get("category_name"),
-                        product_cost=Decimal(item_data.get("price", "0.00")),
-                        category_id=item_data.get("category_id"),
-                    )
+                size = ""
+                color = ""
+                back_name = ""
 
-                    item_total = order_item.product_cost * order_item.quantity
-                    total += item_total
+                if "Size: " in description:
+                    size_part = description.split("Size: ")[1].split(",")[0].strip()
+                    size = size_part
+                if "Color: " in description:
+                    color_part = description.split("Color: ")[1].split(",")[0].strip()
+                    color = color_part
+                if "Custom Name: " in description:
+                    back_name_part = description.split("Custom Name: ")[1].strip()
+                    back_name = back_name_part
 
-                    size_display = dict(Size.choices).get(order_item.size,
-                                                          order_item.size) if order_item.size else 'N/A'
-                    back_name_text = f" (Back: {order_item.back_name})" if order_item.back_name else ""
+                order_item = OrderItem.objects.create(
+                    order=order,
+                    product_name=line_item.description,
+                    size=size,
+                    quantity=line_item.quantity,
+                    product_color=color,
+                    product_cost=Decimal(line_item.amount_total) / 100 / line_item.quantity,
+                    back_name=back_name if back_name else "",
+                )
 
-                    items_list.append(
-                        f"  - {order_item.product_name} - {order_item.product_color or 'N/A'}\n"
-                        f"    Category: {order_item.product_category or 'N/A'}\n"
-                        f"    Size: {size_display}\n"
-                        f"    Quantity: {order_item.quantity}\n"
-                        f"    Price: ${order_item.product_cost} each{back_name_text}"
-                    )
+                item_total = order_item.product_cost * order_item.quantity
+                total += item_total
 
-                order.pending_items = None
+                size_display = dict(Size.choices).get(order_item.size, order_item.size) if order_item.size else 'N/A'
+                back_name_text = f" (Back: {order_item.back_name})" if order_item.back_name else ""
 
-            order.save()
+                items_list.append(
+                    f"  - {order_item.product_name} - {order_item.product_color or 'N/A'}\n"
+                    f"    Size: {size_display}\n"
+                    f"    Quantity: {order_item.quantity}\n"
+                    f"    Price: ${order_item.product_cost} each{back_name_text}"
+                )
 
-            logger.info(f"Successfully processed order {order.id} from Stripe session {session['id']}")
+            logger.info(f"Successfully created order {order.id} from Stripe session {session['id']}")
 
             try:
                 items_summary = "\n\n".join(items_list) if items_list else "No items"
@@ -123,11 +123,8 @@ def stripe_webhook(request):
             except Exception as e:
                 logger.error(f"Error sending order notification email: {str(e)}")
 
-        except Order.DoesNotExist:
-            logger.error(f"Order with order_id {order_id} not found for session {session['id']}")
-            return HttpResponse(status=404)
         except Exception as e:
-            logger.error(f"Error processing order from Stripe session {session['id']}: {str(e)}")
+            logger.error(f"Error creating order from Stripe session {session['id']}: {str(e)}")
             return HttpResponse(status=500)
 
     return HttpResponse(status=200)

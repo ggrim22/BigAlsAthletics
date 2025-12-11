@@ -274,13 +274,6 @@ def confirm_order(request):
         "customer_email": request.POST.get("customer_email", ""),
     }
 
-    pending_order = Order.objects.create(
-        customer_name=customer_data["customer_name"],
-        customer_email=customer_data["customer_email"],
-        pending_items=valid_items,
-        has_paid=False,
-    )
-
     line_items = []
     for item in valid_items:
         product = Product.objects.get(pk=item["product_id"])
@@ -297,8 +290,16 @@ def confirm_order(request):
             "quantity": item["quantity"],
         })
 
+    request.session['pending_order_data'] = {
+        'customer_name': customer_data["customer_name"],
+        'customer_email': customer_data["customer_email"],
+        'items': valid_items,
+    }
+
     metadata = {
-        "order_id": pending_order.order_id,
+        "customer_name": customer_data["customer_name"],
+        "customer_email": customer_data["customer_email"],
+        "session_key": request.session.session_key,  # Reference to find the session data
     }
 
     checkout_session = stripe.checkout.Session.create(
@@ -311,13 +312,9 @@ def confirm_order(request):
         customer_email=customer_data["customer_email"],
     )
 
-    pending_order.stripe_session_id = checkout_session.id
-    pending_order.save()
-
     request.session.pop("current_order_items", None)
 
     return redirect(checkout_session.url, code=303)
-
 
 def delete_item(request, product_id, size):
     if request.method == "POST":
@@ -342,30 +339,44 @@ def payment_success(request):
         return redirect("order:index")
 
     try:
-        session = stripe.checkout.Session.retrieve(session_id)
-        order_id = session.metadata.get('order_id')
+        order = Order.objects.filter(stripe_session_id=session_id).first()
 
-        order = Order.objects.get(order_id=order_id)
+        if not order:
+            session = stripe.checkout.Session.retrieve(session_id)
 
-        if order.pending_items and not order.has_paid:
-            order.has_paid = True
+            order = Order.objects.create(
+                customer_name=session['metadata'].get('customer_name', ''),
+                customer_email=session['metadata'].get('customer_email', ''),
+                stripe_session_id=session_id,
+                has_paid=True,
+            )
 
-            for item in order.pending_items:
+            line_items = stripe.checkout.Session.list_line_items(session_id, limit=100)
+
+            for line_item in line_items.data:
+                description = line_item.description or ""
+
+                size = ""
+                color = ""
+                back_name = ""
+
+                if "Size: " in description:
+                    size = description.split("Size: ")[1].split(",")[0].strip()
+                if "Color: " in description:
+                    color = description.split("Color: ")[1].split(",")[0].strip()
+                if "Custom Name: " in description:
+                    back_name = description.split("Custom Name: ")[1].strip()
+
                 OrderItem.objects.create(
                     order=order,
-                    product_id=item["product_id"],
-                    product_name=item["product_name"],
-                    size=item["size"],
-                    quantity=item["quantity"],
-                    product_color=item["color_name"],
-                    product_category=item["category_name"],
-                    category_id=item.get("category_id"),
-                    product_cost=Decimal(item["price"]),
-                    back_name=item.get("back_name", ""),
+                    product_name=line_item.description.split(" - ")[
+                        0] if " - " in description else line_item.description,
+                    size=size,
+                    quantity=line_item.quantity,
+                    product_color=color,
+                    product_cost=Decimal(line_item.amount_total) / 100 / line_item.quantity,
+                    back_name=back_name if back_name else "",
                 )
-
-            order.pending_items = None
-            order.save()
 
         total_cost = Decimal("0.00")
         for item in order.items.all():
