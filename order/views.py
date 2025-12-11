@@ -277,13 +277,14 @@ def confirm_order(request):
     line_items = []
     for item in valid_items:
         product = Product.objects.get(pk=item["product_id"])
+        # UPDATED: Include category in description
         line_items.append({
             "price_data": {
                 "currency": "usd",
                 "product_data": {
                     "images": [request.build_absolute_uri(product.image.url)],
                     "name": item["product_name"],
-                    "description": f"Size: {item['size']}, Color: {item['color_name'] or ''}, Custom Name: {item['back_name'] or ''}",
+                    "description": f"Size: {item['size']}, Color: {item['color_name'] or ''}, Category: {item['category_name'] or ''}, Custom Name: {item['back_name'] or ''}",
                 },
                 "unit_amount": int(Decimal(item["price"]) * 100),
             },
@@ -299,7 +300,7 @@ def confirm_order(request):
     metadata = {
         "customer_name": customer_data["customer_name"],
         "customer_email": customer_data["customer_email"],
-        "session_key": request.session.session_key,  # Reference to find the session data
+        "session_key": request.session.session_key,
     }
 
     checkout_session = stripe.checkout.Session.create(
@@ -315,7 +316,6 @@ def confirm_order(request):
     request.session.pop("current_order_items", None)
 
     return redirect(checkout_session.url, code=303)
-
 def delete_item(request, product_id, size):
     if request.method == "POST":
         order_items = request.session.get("current_order_items", [])
@@ -366,6 +366,7 @@ def payment_success(request):
                 size = ""
                 color = ""
                 back_name = ""
+                category = ""
 
                 if description:
                     parts = description.split(', ')
@@ -376,6 +377,8 @@ def payment_success(request):
                             color = part.replace('Color: ', '').strip()
                         elif part.startswith('Custom Name: '):
                             back_name = part.replace('Custom Name: ', '').strip()
+                        elif part.startswith('Category: '):
+                            category = part.replace('Category: ', '').strip()
 
                 unit_price = Decimal(line_item.amount_total) / 100 / line_item.quantity
 
@@ -385,6 +388,7 @@ def payment_success(request):
                     size=size,
                     quantity=line_item.quantity,
                     product_color=color,
+                    product_category=category,
                     product_cost=unit_price,
                     back_name=back_name if back_name else "",
                 )

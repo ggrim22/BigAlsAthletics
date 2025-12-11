@@ -60,6 +60,7 @@ def stripe_webhook(request):
                 size = ""
                 color = ""
                 back_name = ""
+                category = ""
 
                 if description:
                     parts = description.split(', ')
@@ -70,6 +71,8 @@ def stripe_webhook(request):
                             color = part.replace('Color: ', '').strip()
                         elif part.startswith('Custom Name: '):
                             back_name = part.replace('Custom Name: ', '').strip()
+                        elif part.startswith('Category: '):  # ADD THIS
+                            category = part.replace('Category: ', '').strip()
 
                 unit_price = Decimal(line_item.amount_total) / 100 / line_item.quantity
 
@@ -79,6 +82,7 @@ def stripe_webhook(request):
                     size=size,
                     quantity=line_item.quantity,
                     product_color=color,
+                    product_category=category,
                     product_cost=unit_price,
                     back_name=back_name if back_name else "",
                 )
