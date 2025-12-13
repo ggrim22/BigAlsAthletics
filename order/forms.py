@@ -125,3 +125,42 @@ class ContactForm(forms.Form):
         if len(message) < 10:
             raise forms.ValidationError("Please provide a more detailed message (at least 10 characters).")
         return message
+
+
+class ProductFilterForm(forms.Form):
+    collection = forms.ModelChoiceField(
+        queryset=Collection.objects.filter(active=True),
+        required=False,
+        label=None,
+        empty_label="-- All Collections --",
+        widget=forms.Select(attrs={
+            "class": "form-select",
+            "hx-get": "/orders/summary/",
+            "hx-target": "#summary-table",
+            "hx-trigger": "change",
+            "hx-push-url": "true",
+        })
+    )
+
+    product_name = forms.ChoiceField(
+        required=False,
+        label=None,
+        widget=forms.Select(attrs={
+            "class": "form-select",
+            "hx-get": "/orders/summary/",
+            "hx-target": "#summary-table",
+            "hx-trigger": "change",
+            "hx-push-url": "true",
+        })
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        product_names = OrderItem.objects.filter(
+            order__archived=False
+        ).values_list('product_name', flat=True).distinct().order_by('product_name')
+
+        choices = [('', '-- All Products --')]
+        choices.extend([(name, name) for name in product_names if name])
+
+        self.fields['product_name'].choices = choices

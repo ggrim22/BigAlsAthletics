@@ -18,7 +18,7 @@ from core import settings
 from core.http import HTMXResponse
 from core.utils import ExcelDownloadResponse
 from .forms import ProductForm, CollectionForm, ColorForm, CategoryForm, ProductVariantForm, CollectionSelectForm, \
-    CollectionFilterForm, ContactForm
+    CollectionFilterForm, ContactForm, ProductFilterForm
 from .models import Product, Size, Order, OrderItem, Collection, ProductColor, ProductCategory, ProductVariant
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -617,6 +617,7 @@ def order_dashboard(request):
 def summary(request):
     size_codes = list(Size.values)
     collection_filter = request.GET.get("collection")
+    product_name_filter = request.GET.get("product_name")  # ADD THIS LINE
 
     summary_qs = (
         OrderItem.objects
@@ -635,6 +636,9 @@ def summary(request):
 
     if collection_filter:
         summary_qs = summary_qs.filter(product__collection=collection_filter)
+
+    if product_name_filter:
+        summary_qs = summary_qs.filter(product_name=product_name_filter)
 
     summary_qs = summary_qs.order_by('product_name', 'product_category', 'product_color')
 
@@ -663,7 +667,7 @@ def summary(request):
         "summary_table": summary_table,
         "size_codes": size_codes,
         "column_totals": column_totals,
-        "filter_form": CollectionFilterForm(request.GET),
+        "filter_form": ProductFilterForm(request.GET),
     }
 
     if request.headers.get("HX-Request"):
@@ -759,11 +763,16 @@ def order_summary_download(request):
     size_labels = {code: label for code, label in Size.choices}
 
     collection_id = request.GET.get("collection")
+    product_name_filter = request.GET.get("product_name")  # ADD THIS LINE
 
     summary_qs = OrderItem.objects.all()
 
     if collection_id:
         summary_qs = summary_qs.filter(product__collection_id=collection_id)
+
+    # ADD THESE 2 LINES
+    if product_name_filter:
+        summary_qs = summary_qs.filter(product_name=product_name_filter)
 
     summary_qs = (
         summary_qs
@@ -803,6 +812,8 @@ def order_summary_download(request):
     if collection_id:
         collection_name = Collection.objects.get(id=collection_id).name
         filename += f" - {collection_name}"
+    if product_name_filter:
+        filename += f" - {product_name_filter}"
 
     return ExcelDownloadResponse(df, filename)
 

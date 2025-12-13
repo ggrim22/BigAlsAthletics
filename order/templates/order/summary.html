@@ -16,9 +16,10 @@
                 hx-get="{% url 'order:summary' %}"
                 hx-target="#summary-table"
                 hx-trigger="change"
-                class="flex items-center">
+                class="flex items-center gap-2">
 
               {{ filter_form.collection }}
+              {{ filter_form.product_name }}
           </form>
 
           <a id="download-btn"
