@@ -763,14 +763,13 @@ def order_summary_download(request):
     size_labels = {code: label for code, label in Size.choices}
 
     collection_id = request.GET.get("collection")
-    product_name_filter = request.GET.get("product_name")  # ADD THIS LINE
+    product_name_filter = request.GET.get("product_name")
 
     summary_qs = OrderItem.objects.all()
 
     if collection_id:
         summary_qs = summary_qs.filter(product__collection_id=collection_id)
 
-    # ADD THESE 2 LINES
     if product_name_filter:
         summary_qs = summary_qs.filter(product_name=product_name_filter)
 
