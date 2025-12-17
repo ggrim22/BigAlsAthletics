@@ -45,3 +45,8 @@ pip-tools==7.5.0
 stripe==14.0.1
 
 pillow==11.3.0
+
+pytest==9.0.2
+pytest-django==4.9.0
+pytest-cov==6.0.0
+pytest-mock==3.14.0
