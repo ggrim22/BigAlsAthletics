@@ -765,13 +765,13 @@ def order_summary_download(request):
     collection_id = request.GET.get("collection")
     product_name_filter = request.GET.get("product_name")
 
-    summary_qs = OrderItem.objects.all()
+    summary_qs = OrderItem.objects.filter(order__archived=False)
 
     if collection_id:
         summary_qs = summary_qs.filter(product__collection_id=collection_id)
 
     if product_name_filter:
-        summary_qs = summary_qs.filter(product_name=product_name_filter)
+        summary_qs = summary_qs.filter(product_name=product_name_filter, product__collection__active=True)
 
     summary_qs = (
         summary_qs

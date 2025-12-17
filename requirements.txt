@@ -20,6 +20,8 @@ charset-normalizer==3.4.4
     # via requests
 click==8.3.0
     # via pip-tools
+coverage[toml]==7.13.0
+    # via pytest-cov
 crispy-bootstrap5==2024.2
     # via -r requirements.in
 dj-config-url==0.1.1
@@ -46,6 +48,8 @@ django-csp==4.0
     # via -r requirements.in
 django-debug-toolbar==6.0.0
     # via -r requirements.in
+django-environ==0.11.2
+    # via -r requirements.in
 django-heroku==0.3.1
     # via -r requirements.in
 django-storages==1.14.6
@@ -54,6 +58,8 @@ gunicorn==23.0.0
     # via -r requirements.in
 idna==3.11
     # via requests
+iniconfig==2.3.0
+    # via pytest
 jmespath==1.0.1
     # via
     #   boto3
@@ -63,10 +69,13 @@ packaging==25.0
     #   build
     #   django-csp
     #   gunicorn
+    #   pytest
 pillow==11.3.0
     # via -r requirements.in
 pip-tools==7.5.0
     # via -r requirements.in
+pluggy==1.6.0
+    # via pytest
 polars==1.33.1
     # via -r requirements.in
 psycopg[binary]==3.2.10
@@ -75,11 +84,25 @@ psycopg-binary==3.2.10
     # via psycopg
 psycopg2==2.9.11
     # via django-heroku
+pygments==2.19.2
+    # via pytest
 pyproject-hooks==1.2.0
     # via
     #   build
     #   pip-tools
 pytailwindcss==0.3.0
+    # via -r requirements.in
+pytest==9.0.2
+    # via
+    #   -r requirements.in
+    #   pytest-cov
+    #   pytest-django
+    #   pytest-mock
+pytest-cov==6.0.0
+    # via -r requirements.in
+pytest-django==4.9.0
+    # via -r requirements.in
+pytest-mock==3.14.0
     # via -r requirements.in
 python-dateutil==2.9.0.post0
     # via botocore
