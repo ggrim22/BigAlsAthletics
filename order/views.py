@@ -735,7 +735,7 @@ def collection_list(request):
     return render(request, "order/partials/_collections-list.html", context)
 
 def order_download(request):
-    orders = Order.objects.prefetch_related("items")
+    orders = Order.objects.filter(archived=False).prefetch_related("items")
 
     rows = []
     for order in orders:
