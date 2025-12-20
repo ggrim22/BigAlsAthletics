@@ -742,7 +742,7 @@ def order_download(request):
         items_summary = []
         for item in order.items.all():
             items_summary.append(
-                f"{item.product_name} - {item.product_category} ({item.size}){f' – {item.back_name}' if item.back_name else ''} x{item.quantity}, "
+                f"{item.product_name} - {item.product_color} {item.product_category} ({item.size}){f' – {item.back_name}' if item.back_name else ''} x {item.quantity}, "
             )
 
         rows.append({
@@ -974,7 +974,8 @@ def bulk_archive_orders(request):
 def archived_orders(request):
     """View archived orders"""
     orders = Order.objects.filter(archived=True).prefetch_related("items__product").order_by("-created_at")
-    context = {'orders': orders, 'is_archived_view': True}
+    total = orders.count()
+    context = {'orders': orders, 'is_archived_view': True, 'total_orders': total}
     return render(request, "order/order-archive.html", context)
 
 

@@ -25,7 +25,7 @@
             {% for item in order.items.all %}
             <li>
                 {{ item.quantity }} × {{ item.product_name }} -
-                {{ item.product_category }} ({{ item.size }})
+                {{ item.product_color }} {{ item.product_category }} ({{ item.size }})
                 {% if item.back_name %} – "{{ item.back_name }}"{% endif %}
             </li>
             {% endfor %}
