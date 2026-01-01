@@ -40,6 +40,6 @@ urlpatterns = [
     path('bulk-archive/', views.bulk_archive_orders, name='bulk_archive_orders'),
     path('archived/', views.archived_orders, name='archived_orders'),
     path('restore/<int:order_id>/', views.restore_order, name='restore_order'),
-    path('contact-page', views.contact_page, name='contact'),
+    # path('contact-page', views.contact_page, name='contact'),
 
 ]
