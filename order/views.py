@@ -7,6 +7,7 @@ import stripe
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.core.cache import cache
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
 from django.db.models import Sum, Q
@@ -994,8 +995,14 @@ def restore_order(request, order_id):
 
 
 def contact_page(request):
-
     if request.method == 'POST':
+        ip = request.META.get('REMOTE_ADDR')
+        cache_key = f'contact_{ip}'
+
+        if cache.get(cache_key):
+            messages.error(request, 'Please wait a few minutes before submitting another message.')
+            return render(request, 'order/contact.html', {'form': ContactForm()})
+
         form = ContactForm(request.POST)
 
         if form.is_valid():
@@ -1005,18 +1012,17 @@ def contact_page(request):
             subject = f"New Contact Form Submission from {user_email}"
             message = f"""
                     You have received a new message from the Big Al's Athletics contact form.
-                    
+
                     From: {user_email}
-                    
+
                     Message:
                     {user_message}
-                    
+
                     ---
                     This message was sent via the contact form on your website.
                                 """
 
             try:
-                # Send email
                 send_mail(
                     subject=subject,
                     message=message,
@@ -1024,6 +1030,8 @@ def contact_page(request):
                     recipient_list=[settings.CONTACT_EMAIL],
                     fail_silently=False,
                 )
+
+                cache.set(cache_key, True, 300)
 
                 messages.success(request, 'Your message has been sent successfully! We\'ll get back to you soon.')
                 logger.info(f"Contact form submitted by {user_email}")
