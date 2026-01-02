@@ -2,6 +2,7 @@
 Tests for order views
 """
 import pytest
+from django.core.cache import cache
 from decimal import Decimal
 from unittest.mock import Mock, patch
 from django.urls import reverse
@@ -34,6 +35,13 @@ def add_session_to_request(request):
     middleware.process_request(request)
     request.session.save()
 
+
+@pytest.fixture(autouse=True)
+def clear_cache_for_tests():
+    """Clear cache before and after each test to reset rate limits"""
+    cache.clear()
+    yield
+    cache.clear()
 
 @pytest.mark.django_db
 class TestIndexView:

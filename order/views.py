@@ -13,6 +13,7 @@ from django.core.paginator import Paginator
 from django.db.models import Sum, Q
 from django.http import HttpResponse, BadHeaderError
 from django.shortcuts import render, redirect, get_object_or_404
+from core.decorators import rate_limit
 from django.urls import reverse
 
 from core import settings
@@ -93,7 +94,7 @@ def products(request, collection_id):
     }
     return render(request, "order/partials/_products.html", context)
 
-
+@rate_limit('add_item', limit=30, period=60, message='You are adding items too quickly. Please slow down.')
 def add_item(request):
     if request.method != "POST":
         return HttpResponse(status=400)
@@ -228,7 +229,7 @@ def add_item(request):
 #
 #     return render(request, "order/confirmation.html", {"order": order, "total_cost": total_cost})
 
-
+@rate_limit('checkout', limit=5, period=300, message='Too many checkout attempts. Please wait 5 minutes before trying again.')
 def confirm_order(request):
     order_items = request.session.get("current_order_items", [])
     if not order_items or request.method != "POST":
@@ -994,58 +995,50 @@ def restore_order(request, order_id):
     return HttpResponse(status=400)
 
 
-# def contact_page(request):
-#     if request.method == 'POST':
-#         ip = request.META.get('REMOTE_ADDR')
-#         cache_key = f'contact_{ip}'
-#
-#         if cache.get(cache_key):
-#             messages.error(request, 'Please wait a few minutes before submitting another message.')
-#             return render(request, 'order/contact.html', {'form': ContactForm()})
-#
-#         form = ContactForm(request.POST)
-#
-#         if form.is_valid():
-#             user_email = form.cleaned_data['email']
-#             user_message = form.cleaned_data['message']
-#
-#             subject = f"New Contact Form Submission from {user_email}"
-#             message = f"""
-#                     You have received a new message from the Big Al's Athletics contact form.
-#
-#                     From: {user_email}
-#
-#                     Message:
-#                     {user_message}
-#
-#                     ---
-#                     This message was sent via the contact form on your website.
-#                                 """
-#
-#             try:
-#                 send_mail(
-#                     subject=subject,
-#                     message=message,
-#                     from_email=settings.DEFAULT_FROM_EMAIL,
-#                     recipient_list=[settings.CONTACT_EMAIL],
-#                     fail_silently=False,
-#                 )
-#
-#                 cache.set(cache_key, True, 300)
-#
-#                 messages.success(request, 'Your message has been sent successfully! We\'ll get back to you soon.')
-#                 logger.info(f"Contact form submitted by {user_email}")
-#                 return redirect('order:contact')
-#
-#             except BadHeaderError:
-#                 messages.error(request, 'Invalid header found. Please try again.')
-#                 logger.error(f"Bad header in contact form from {user_email}")
-#
-#             except Exception as e:
-#                 messages.error(request, 'An error occurred while sending your message. Please try again later.')
-#                 logger.error(f"Error sending contact email: {str(e)}")
-#
-#     else:
-#         form = ContactForm()
-#
-#     return render(request, 'order/contact.html', {'form': form})
+@rate_limit('contact', limit=3, period=300, message='Too many contact form submissions. Please wait 5 minutes before trying again.')
+def contact_page(request):
+    if request.method == 'POST':
+        form = ContactForm(request.POST)
+
+        if form.is_valid():
+            user_email = form.cleaned_data['email']
+            user_message = form.cleaned_data['message']
+
+            subject = f"New Contact Form Submission from {user_email}"
+            message = f"""
+                    You have received a new message from the Big Al's Athletics contact form.
+
+                    From: {user_email}
+
+                    Message:
+                    {user_message}
+
+                    ---
+                    This message was sent via the contact form on your website.
+                                """
+
+            try:
+                send_mail(
+                    subject=subject,
+                    message=message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[settings.CONTACT_EMAIL],
+                    fail_silently=False,
+                )
+
+                messages.success(request, 'Your message has been sent successfully! We\'ll get back to you soon.')
+                logger.info(f"Contact form submitted by {user_email}")
+                return redirect('order:contact')
+
+            except BadHeaderError:
+                messages.error(request, 'Invalid header found. Please try again.')
+                logger.error(f"Bad header in contact form from {user_email}")
+
+            except Exception as e:
+                messages.error(request, 'An error occurred while sending your message. Please try again later.')
+                logger.error(f"Error sending contact email: {str(e)}")
+
+    else:
+        form = ContactForm()
+
+    return render(request, 'order/contact.html', {'form': form})

@@ -14,6 +14,21 @@ DEBUG = config("DEBUG", default=False, cast=bool)
 
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost").split(",")
 
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_BROWSER_XSS_FILTER = True
+    X_FRAME_OPTIONS = 'DENY'
+
 # ============================================================
 # INSTALLED APPS
 # ============================================================
@@ -25,11 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
-    # Your apps
     'order',
-
-    # Third-party
     'crispy_forms',
     'crispy_bootstrap5',
     'storages',
@@ -45,10 +56,8 @@ if DEBUG:
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
 
-    # Required for Heroku + Whitenoise
     'whitenoise.middleware.WhiteNoiseMiddleware',
 
-    # CSP Middleware
     'csp.middleware.CSPMiddleware',
 
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -195,21 +204,21 @@ CSP_FRAME_SRC = ("'self'",)
 # EMAIL
 # ============================================================
 
+
+
+
+DEFAULT_FROM_EMAIL = config("SENDGRID_FROM_EMAIL", default="noreply@example.com")
+CONTACT_EMAIL = config("CONTACT_EMAIL", default="")
+
 if DEBUG:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 else:
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-    EMAIL_HOST = config("EMAIL_HOST", default="smtp.gmail.com")
-    EMAIL_PORT = config("EMAIL_PORT", cast=int, default=587)
+    EMAIL_HOST = "smtp.sendgrid.net"
+    EMAIL_PORT = 587
     EMAIL_USE_TLS = True
-    EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
-    EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
-    DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default=EMAIL_HOST_USER)
-    CONTACT_EMAIL=config("CONTACT_EMAIL")
-
-# ============================================================
-# LOGGING (IMPORTANT FOR 500 ERRORS)
-# ============================================================
+    EMAIL_HOST_USER = "apikey"
+    EMAIL_HOST_PASSWORD = config("SENDGRID_API_KEY", default="")
 
 LOGGING = {
     "version": 1,
@@ -218,8 +227,5 @@ LOGGING = {
     "root": {"handlers": ["console"], "level": "ERROR"},
 }
 
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-    }
-}
+
+

@@ -42,6 +42,7 @@
           <ul class="flex items-center gap-2">
             <li><a class="hover:text-gray-500 px-3 py-2 rounded transition-colors" href="{% url 'order:index' %}">Home</a></li>
             <li><a class="hover:text-gray-500 px-3 py-2 rounded transition-colors" href="{% url 'order:about' %}">About</a></li>
+            <li><a class="hover:text-gray-500 px-3 py-2 rounded transition-colors" href="{% url 'order:contact' %}">Contact</a></li>
             {% if user.is_authenticated %}
             <li><a class="hover:text-gray-500 px-3 py-2 rounded transition-colors" href="{% url 'order:order_dashboard' %}">Manage Orders</a></li>
             <li><a class="hover:text-gray-500 px-3 py-2 rounded transition-colors" href="{% url 'order:product_dashboard' %}">Manage Products</a></li>
@@ -113,6 +114,7 @@
     <ul id="mobile-menu" class="hidden flex-col gap-2 mt-2 md:hidden bg-white rounded-lg shadow-lg p-4 absolute right-0 w-56 z-50">
       <li><a class="block px-3 py-2 rounded hover:bg-gray-100" href="{% url 'order:index' %}">Home</a></li>
       <li><a class="block px-3 py-2 rounded hover:bg-gray-100" href="{% url 'order:about' %}">About</a></li>
+      <li><a class="block px-3 py-2 rounded hover:bg-gray-100" href="{% url 'order:contact' %}">Contact</a></li>
       {% if user.is_authenticated %}
       <li><a class="block px-3 py-2 rounded hover:bg-gray-100" href="{% url 'order:order_dashboard' %}">Manage Orders</a></li>
       <li><a class="block px-3 py-2 rounded hover:bg-gray-100" href="{% url 'order:product_dashboard' %}">Manage Products</a></li>
