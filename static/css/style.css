@@ -90,9 +90,9 @@
 .glass-card {
     backdrop-filter: blur(40px);
     -webkit-backdrop-filter: blur(40px);
-    will-change: backdrop-filter;
     transform: translateZ(0);
-  }
+    isolation: isolate;
+}
 
   @keyframes gradient {
     0%, 100% { background-position: 0% 50%; }
