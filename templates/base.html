@@ -40,13 +40,49 @@
       <div class="hidden md:flex justify-end px-4">
         <div class="flex items-center justify-between py-3">
           <ul class="flex items-center gap-2">
-            <li><a class="hover:text-gray-500 px-3 py-2 rounded transition-colors" href="{% url 'order:index' %}">Home</a></li>
-            <li><a class="hover:text-gray-500 px-3 py-2 rounded transition-colors" href="{% url 'order:about' %}">About</a></li>
-            <li><a class="hover:text-gray-500 px-3 py-2 rounded transition-colors" href="{% url 'order:contact' %}">Contact</a></li>
+            <li>
+              <a class="nav-link hover:text-gray-500 px-3 py-2 rounded transition-colors relative"
+                 href="{% url 'order:index' %}"
+                 data-page="home">
+                Home
+              </a>
+            </li>
+            <li>
+              <a class="nav-link hover:text-gray-500 px-3 py-2 rounded transition-colors relative"
+                 href="{% url 'order:about' %}"
+                 data-page="about">
+                About
+              </a>
+            </li>
+            <li>
+              <a class="nav-link hover:text-gray-500 px-3 py-2 rounded transition-colors relative"
+                 href="{% url 'order:contact' %}"
+                 data-page="contact">
+                Contact
+              </a>
+            </li>
             {% if user.is_authenticated %}
-            <li><a class="hover:text-gray-500 px-3 py-2 rounded transition-colors" href="{% url 'order:order_dashboard' %}">Manage Orders</a></li>
-            <li><a class="hover:text-gray-500 px-3 py-2 rounded transition-colors" href="{% url 'order:product_dashboard' %}">Manage Products</a></li>
-            <li><a class="hover:text-gray-500 px-3 py-2 rounded transition-colors" href="{% url 'order:collection_dashboard' %}">Manage Collections</a></li>
+            <li>
+              <a class="nav-link hover:text-gray-500 px-3 py-2 rounded transition-colors relative"
+                 href="{% url 'order:order_dashboard' %}"
+                 data-page="orders">
+                Manage Orders
+              </a>
+            </li>
+            <li>
+              <a class="nav-link hover:text-gray-500 px-3 py-2 rounded transition-colors relative"
+                 href="{% url 'order:product_dashboard' %}"
+                 data-page="products">
+                Manage Products
+              </a>
+            </li>
+            <li>
+              <a class="nav-link hover:text-gray-500 px-3 py-2 rounded transition-colors relative"
+                 href="{% url 'order:collection_dashboard' %}"
+                 data-page="collections">
+                Manage Collections
+              </a>
+            </li>
             <li>
               <form method="post" action="{% url 'logout' %}" class="inline">
                 {% csrf_token %}
@@ -128,6 +164,43 @@
       {% endif %}
     </ul>
   </nav>
+
+  <style>
+    /* Active page underline indicator */
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 2px;
+      background: linear-gradient(to right, #57534e, #44403c);
+      transition: width 0.3s ease;
+    }
+
+    .nav-link.active::after {
+      width: 80%;
+    }
+
+    .nav-link:hover::after {
+      width: 80%;
+    }
+  </style>
+
+  <script>
+    // Add active class to current page link
+    document.addEventListener('DOMContentLoaded', function() {
+      const currentPath = window.location.pathname;
+      const navLinks = document.querySelectorAll('.nav-link');
+
+      navLinks.forEach(link => {
+        if (link.getAttribute('href') === currentPath) {
+          link.classList.add('active');
+        }
+      });
+    });
+  </script>
 
 
     <div id="main">
