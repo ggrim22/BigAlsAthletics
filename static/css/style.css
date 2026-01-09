@@ -88,8 +88,6 @@
 
 
 .glass-card {
-    backdrop-filter: blur(40px);
-    -webkit-backdrop-filter: blur(40px);
     transform: translateZ(0);
     isolation: isolate;
 }
@@ -104,7 +102,6 @@
     animation: gradient 3s ease infinite;
   }
 
-  /* Animation wrappers - not applied to glass elements */
   .fade-in-up {
     animation: fadeInUp 0.8s ease-out;
   }
