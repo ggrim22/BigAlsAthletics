@@ -239,7 +239,7 @@ def confirm_order(request):
     total_cost = Decimal("0.00")
 
     for item in order_items:
-        product = Product.objects.filter(pk=item.get("product_id")).first()
+        product = Product.objects.filter(pk=item.get("product_id"), active=True, collection__active=True).first()
         if not product:
             continue
 
