@@ -131,13 +131,13 @@ def add_item(request):
             price = first_variant.price
 
         if size == Size.ADULT_2X or size == Size.ADULT_3X:
-            price += 2
+            price += 3
 
         if back_name:
             price += 2
 
-        if size == Size.ADULT_4X:
-            price += 3
+        if size in [Size.ADULT_4X, Size.ADULT_5X]:
+            price += 4
 
     order_items = request.session.get("current_order_items", [])
     order_items.append({
@@ -248,9 +248,9 @@ def confirm_order(request):
         price = Decimal(item.get("price", "0.00"))
 
         if size in [Size.ADULT_2X, Size.ADULT_3X]:
-            price += 2
-        if size == Size.ADULT_4X:
             price += 3
+        if size in [Size.ADULT_4X, Size.ADULT_5X]:
+            price += 4
         if back_name:
             price += 2
 
@@ -443,10 +443,10 @@ def view_summary(request):
         back_name = item.get("back_name")
 
         if size == Size.ADULT_2X or size == Size.ADULT_3X:
-            price = price + 2
-
-        if size == Size.ADULT_4X:
             price = price + 3
+
+        if size in [Size.ADULT_4X, Size.ADULT_5X]:
+            price = price + 4
 
         if back_name:
             price = price + 2
@@ -488,9 +488,9 @@ def shopping_cart(request):
             # Apply size upcharges
             size = item.get("size")
             if size in [Size.ADULT_2X, Size.ADULT_3X]:
-                price += Decimal("2.00")
-            elif size == Size.ADULT_4X:
                 price += Decimal("3.00")
+            elif size in [Size.ADULT_4X, Size.ADULT_5X]:
+                price += Decimal("4.00")
 
             # Apply back name upcharge
             if item.get("back_name"):
@@ -931,9 +931,9 @@ def get_variant_price(request, product_id):
         price += 2
 
     if size in [Size.ADULT_2X, Size.ADULT_3X]:
-        price += 2
-    elif size == Size.ADULT_4X:
         price += 3
+    elif size in [Size.ADULT_4X, Size.ADULT_5X]:
+        price += 4
 
     return HttpResponse(f'<i class="bi bi-currency-dollar"></i>{price:.2f}')
 

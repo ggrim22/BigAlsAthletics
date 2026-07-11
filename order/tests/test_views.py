@@ -206,8 +206,8 @@ class TestShoppingCartView:
         session.save()
 
         response = client.get(reverse('order:shopping_cart'))
-        # Base: $25 + Size 2X: $2 + Back name: $2 = $29
-        assert response.context['total_cost'] == Decimal('29.00')
+        # Base: $25 + Size 2X: $3 + Back name: $2 = $30
+        assert response.context['total_cost'] == Decimal('30.00')
 
 
 @pytest.mark.django_db
@@ -399,7 +399,7 @@ class TestConfirmOrderView:
         mock_session.url = 'https://checkout.stripe.com/test'
         mock_stripe.return_value = mock_session
 
-        # Add item with 2X size (should add $2)
+        # Add item with 2X size (should add $3)
         session = client.session
         session['current_order_items'] = [{
             'product_id': product.id,
@@ -418,15 +418,15 @@ class TestConfirmOrderView:
             'customer_email': 'big@test.com'
         })
 
-        # Verify price includes $2 upcharge
+        # Verify price includes $3 upcharge
         call_args = mock_stripe.call_args
         line_item = call_args.kwargs['line_items'][0]
-        # Base: $25 + Size 2X: $2 = $27 = 2700 cents
-        assert line_item['price_data']['unit_amount'] == 2700
+        # Base: $25 + Size 2X: $3 = $28 = 2800 cents
+        assert line_item['price_data']['unit_amount'] == 2800
 
     @patch('stripe.checkout.Session.create')
     def test_confirm_order_with_4x_upcharge(self, mock_stripe, client, product):
-        """Test that 4X size has $3 upcharge"""
+        """Test that 4X size has $4 upcharge"""
         mock_session = Mock()
         mock_session.url = 'https://checkout.stripe.com/test'
         mock_stripe.return_value = mock_session
@@ -449,11 +449,42 @@ class TestConfirmOrderView:
             'customer_email': 'reallybig@test.com'
         })
 
-        # Verify price includes $3 upcharge
+        # Verify price includes $4 upcharge
         call_args = mock_stripe.call_args
         line_item = call_args.kwargs['line_items'][0]
-        # Base: $25 + Size 4X: $3 = $28 = 2800 cents
-        assert line_item['price_data']['unit_amount'] == 2800
+        # Base: $25 + Size 4X: $4 = $29 = 2900 cents
+        assert line_item['price_data']['unit_amount'] == 2900
+
+    @patch('stripe.checkout.Session.create')
+    def test_confirm_order_with_5x_upcharge(self, mock_stripe, client, product):
+        """Test that 5X size has $4 upcharge"""
+        mock_session = Mock()
+        mock_session.url = 'https://checkout.stripe.com/test'
+        mock_stripe.return_value = mock_session
+
+        session = client.session
+        session['current_order_items'] = [{
+            'product_id': product.id,
+            'product_name': product.name,
+            'size': Size.ADULT_5X,
+            'quantity': 1,
+            'price': '25.00',
+            'color_name': 'Red',
+            'category_name': 'T-Shirt',
+            'back_name': ''
+        }]
+        session.save()
+
+        response = client.post(reverse('order:confirm_order'), {
+            'customer_name': 'Even Bigger Guy',
+            'customer_email': 'evenbigger@test.com'
+        })
+
+        # Verify price includes $4 upcharge
+        call_args = mock_stripe.call_args
+        line_item = call_args.kwargs['line_items'][0]
+        # Base: $25 + Size 5X: $4 = $29 = 2900 cents
+        assert line_item['price_data']['unit_amount'] == 2900
 
     @patch('stripe.checkout.Session.create')
     def test_confirm_order_with_back_name_upcharge(self, mock_stripe, client, product):
@@ -497,7 +528,7 @@ class TestConfirmOrderView:
         session['current_order_items'] = [{
             'product_id': product.id,
             'product_name': product.name,
-            'size': Size.ADULT_2X,  # +$2
+            'size': Size.ADULT_2X,  # +$3
             'quantity': 1,
             'price': '25.00',
             'color_name': 'Red',
@@ -514,8 +545,8 @@ class TestConfirmOrderView:
         # Verify both upcharges applied
         call_args = mock_stripe.call_args
         line_item = call_args.kwargs['line_items'][0]
-        # Base: $25 + Size 2X: $2 + Back name: $2 = $29 = 2900 cents
-        assert line_item['price_data']['unit_amount'] == 2900
+        # Base: $25 + Size 2X: $3 + Back name: $2 = $30 = 3000 cents
+        assert line_item['price_data']['unit_amount'] == 3000
 
     @patch('stripe.checkout.Session.create')
     def test_confirm_order_product_metadata(self, mock_stripe, client, product):
