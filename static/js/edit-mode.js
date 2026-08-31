@@ -159,47 +159,32 @@ class OrderEditMode {
     }
 
     setupEventListeners() {
-        // Edit mode toggle - only setup once, don't clone this one
-        const editModeToggle = document.getElementById('editModeToggle');
-        if (editModeToggle && !editModeToggle.dataset.listenerAttached) {
-            editModeToggle.addEventListener('change', (e) => this.toggleEditMode(e.target.checked));
-            editModeToggle.dataset.listenerAttached = 'true';
+        // The order table is replaced and extended by HTMX. Event delegation keeps
+        // controls on every paginated page functional without rebinding listeners.
+        if (!document.body.dataset.orderEditModeListenersAttached) {
+            document.body.addEventListener('change', (event) => {
+                const target = event.target;
+                if (target.id === 'editModeToggle') {
+                    this.toggleEditMode(target.checked);
+                } else if (target.id === 'selectAllOrders') {
+                    this.toggleAll(target.checked);
+                } else if (target.matches('.order-checkbox')) {
+                    this.toggleOrder(Number(target.value), target.checked);
+                }
+            });
+
+            document.body.addEventListener('click', (event) => {
+                if (event.target.closest('#bulkArchiveBtn')) {
+                    this.bulkArchive();
+                } else if (event.target.closest('#bulkDeleteBtn')) {
+                    this.bulkDelete();
+                }
+            });
+            document.body.dataset.orderEditModeListenersAttached = 'true';
         }
 
-        // Select all checkbox
-        const selectAllCheckbox = document.getElementById('selectAllOrders');
-        if (selectAllCheckbox) {
-            selectAllCheckbox.replaceWith(selectAllCheckbox.cloneNode(true));
-            const newSelectAll = document.getElementById('selectAllOrders');
-            newSelectAll.addEventListener('change', (e) => this.toggleAll(e.target.checked));
-        }
-
-        // Individual order checkboxes
-        document.querySelectorAll('.order-checkbox').forEach(checkbox => {
-            // Clone to remove old listeners
-            const newCheckbox = checkbox.cloneNode(true);
-            checkbox.parentNode.replaceChild(newCheckbox, checkbox);
-            newCheckbox.addEventListener('change', (e) => this.toggleOrder(parseInt(e.target.value), e.target.checked));
-        });
-
-        // Bulk action buttons
-        const archiveBtn = document.getElementById('bulkArchiveBtn');
-        const deleteBtn = document.getElementById('bulkDeleteBtn');
-
-        if (archiveBtn) {
-            const newArchiveBtn = archiveBtn.cloneNode(true);
-            archiveBtn.parentNode.replaceChild(newArchiveBtn, archiveBtn);
-            newArchiveBtn.addEventListener('click', () => this.bulkArchive());
-        }
-
-        if (deleteBtn) {
-            const newDeleteBtn = deleteBtn.cloneNode(true);
-            deleteBtn.parentNode.replaceChild(newDeleteBtn, deleteBtn);
-            newDeleteBtn.addEventListener('click', () => this.bulkDelete());
-        }
-
-        // Restore edit mode state after HTMX swap
         this.restoreEditModeState();
+        this.syncCheckboxes();
     }
 
     restoreEditModeState() {
@@ -209,6 +194,16 @@ class OrderEditMode {
             this.editMode = true;
             this.updateUI();
         }
+    }
+
+    syncCheckboxes() {
+        // Apply saved selections and the current edit-mode visibility to rows that
+        // were just appended by pagination.
+        document.querySelectorAll('.order-checkbox').forEach(checkbox => {
+            checkbox.checked = this.selectedOrders.has(Number(checkbox.value));
+        });
+        this.updateSelectAllCheckbox();
+        this.updateUI();
     }
 
     toggleEditMode(enabled) {
@@ -224,7 +219,7 @@ class OrderEditMode {
                 selectAllCheckbox.checked = false;
             }
         }
-        this.updateUI();
+        this.syncCheckboxes();
     }
 
     toggleAll(checked) {
@@ -381,15 +376,10 @@ if (document.readyState === 'loading') {
     orderEditMode = new OrderEditMode();
 }
 
-// Reinitialize after HTMX swaps
+// Sync after every HTMX swap. Paginated order rows replace the loading row itself,
+// so they are not necessarily inside the original order-list swap target.
 document.body.addEventListener('htmx:afterSwap', (event) => {
-    // Check if the swap affected the order list
-    const target = event.detail.target;
-    if (target.querySelector('#order-list-container') ||
-        target.id === 'order-list-container' ||
-        target.closest('[hx-get*="order_list"]')) {
-        if (orderEditMode) {
-            orderEditMode.setupEventListeners();
-        }
+    if (orderEditMode) {
+        orderEditMode.setupEventListeners();
     }
 });
