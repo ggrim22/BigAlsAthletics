@@ -1,52 +1,51 @@
 # Core Framework
-Django==5.2.6
-gunicorn==23.0.0
+# Django 6.1 requires PostgreSQL 15; this project currently uses PostgreSQL 14.
+Django>=5.2,<6
+gunicorn
 
 # Database
-psycopg[binary]==3.2.10
-dj-database-url==3.0.1
+psycopg[binary]
+dj-database-url
 
 # Forms & UI
-django-crispy-forms==2.4
-crispy-bootstrap5==2024.2
+django-crispy-forms
+crispy-bootstrap5
 
 # Static Files & Storage
-whitenoise==6.11.0
-django-storages==1.14.6
-boto3==1.40.50
+whitenoise
+django-storages
+boto3
 
 # Security
-django-csp==4.0
+django-csp
 
 # Configuration
-python-decouple==3.8
-python-dotenv==1.1.1
-django-heroku==0.3.1
-dj-config-url==0.1.1
-django-environ==0.11.2
+python-decouple
+python-dotenv
+django-heroku
+dj-config-url
+django-environ
 
 
 # Development
-django-debug-toolbar==6.0.0
+django-debug-toolbar
 
 # Data Processing
-polars==1.33.1
-xlsxwriter==3.2.9
+polars
+xlsxwriter
 
 # Images
-pillow==11.3.0
+pillow
 
 # Tailwind
-pytailwindcss==0.3.0
+pytailwindcss
 
 # Build Tools
-pip-tools==7.5.0
+pip-tools
 
-stripe==14.0.1
+stripe
 
-pillow==11.3.0
-
-pytest==9.0.2
-pytest-django==4.9.0
-pytest-cov==6.0.0
-pytest-mock==3.14.0
+pytest
+pytest-django
+pytest-cov
+pytest-mock

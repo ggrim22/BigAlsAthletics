@@ -31,6 +31,37 @@ def is_admin(user):
     return user.is_superuser
 
 
+def selected_variant(product, category_id=None, color_id=None):
+    """Return the most specific pricing rule for a product selection.
+
+    A color-specific rule overrides a category-wide rule. Older data without a
+    category-wide rule retains the original fallback to the first rule in that
+    category.
+    """
+    if not category_id:
+        return None
+
+    try:
+        category_id = int(category_id)
+    except (TypeError, ValueError):
+        return None
+
+    variants = product.variants.filter(category_id=category_id)
+    if color_id:
+        try:
+            color_id = int(color_id)
+        except (TypeError, ValueError):
+            color_id = None
+        if color_id:
+            return (
+                variants.filter(color_id=color_id).first()
+                or variants.filter(color__isnull=True).first()
+                or variants.first()
+            )
+
+    return variants.filter(color__isnull=True).first() or variants.first()
+
+
 def index(request):
     form = CollectionSelectForm(request.POST or None)
     collection = None
@@ -108,24 +139,15 @@ def add_item(request):
 
     product = get_object_or_404(Product, id=product_id)
 
-    color_name = None
-    if color_id:
-        color = ProductColor.objects.filter(id=color_id).first()
-        if color:
-            color_name = color.name
+    color = product.colors.filter(id=color_id).first() if color_id else None
+    category = product.category.filter(id=category_id).first() if category_id else None
+    color_name = color.name if color else None
+    category_name = category.name if category else None
 
-    category_name = None
-    price = Decimal("0.00")
+    variant = selected_variant(product, category_id, color_id)
+    price = variant.price if variant else Decimal("0.00")
 
-    if category_id:
-        category = ProductCategory.objects.filter(id=category_id).first()
-        if category:
-            category_name = category.name
-            variant = product.variants.filter(category=category).first()
-            if variant:
-                price = variant.price
-
-    if price == Decimal("0.00"):
+    if not variant:
         first_variant = product.variants.first()
         if first_variant:
             price = first_variant.price
@@ -855,7 +877,7 @@ def add_or_update_variant(request, product_id):
     product = get_object_or_404(Product, pk=product_id)
 
     if request.method == "POST":
-        form = ProductVariantForm(request.POST)
+        form = ProductVariantForm(request.POST, product=product)
         if form.is_valid():
             variant, created = ProductVariant.objects.update_or_create(
                 product=product,
@@ -868,9 +890,16 @@ def add_or_update_variant(request, product_id):
             )
             return HTMXResponse(trigger="variant-added")
     else:
-        form = ProductVariantForm()
+        form = ProductVariantForm(product=product)
 
-    return render(request, "order/modals/add-variant.html", {"form": form, "product": product})
+    variants = product.variants.select_related("category", "color").order_by(
+        "category__name", "color__name"
+    )
+    return render(request, "order/modals/add-variant.html", {
+        "form": form,
+        "product": product,
+        "variants": variants,
+    })
 
 
 def get_variant_sizes(request, product_id):
@@ -879,13 +908,7 @@ def get_variant_sizes(request, product_id):
 
     product = get_object_or_404(Product, pk=product_id)
 
-    variant_qs = ProductVariant.objects.filter(product=product)
-    if category_id:
-        variant_qs = variant_qs.filter(category_id=category_id)
-    if color_id:
-        variant_qs = variant_qs.filter(color_id=color_id)
-
-    variant = variant_qs.first()
+    variant = selected_variant(product, category_id, color_id)
 
     if variant and variant.available_sizes:
         sizes = [(size_code, Size(size_code).label) for size_code in variant.available_sizes]
@@ -908,19 +931,8 @@ def get_variant_price(request, product_id):
     if not category_id or category_id == '':
         return HttpResponse('<i class="bi bi-currency-dollar"></i>0.00')
 
-    variant_qs = ProductVariant.objects.filter(product_id=product_id)
-
-    if category_id and category_id.isdigit():
-        variant_qs = variant_qs.filter(category_id=int(category_id))
-
-    if color_id and color_id.isdigit():
-        variant_qs = variant_qs.filter(color_id=int(color_id))
-
-    variant = variant_qs.first()
-
-    if not variant and category_id and category_id.isdigit():
-        variant_qs = ProductVariant.objects.filter(product_id=product_id, category_id=int(category_id))
-        variant = variant_qs.first()
+    product = get_object_or_404(Product, pk=product_id)
+    variant = selected_variant(product, category_id, color_id)
 
     if not variant:
         return HttpResponse('<i class="bi bi-currency-dollar"></i>0.00')

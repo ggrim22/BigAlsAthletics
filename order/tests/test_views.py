@@ -134,6 +134,33 @@ class TestAddItemView:
         order_items = client.session.get('current_order_items', [])
         assert Decimal(order_items[0]['price']) == product_variant.price
 
+    def test_add_item_prefers_color_specific_variant_price(
+        self, client, product, product_category, product_color
+    ):
+        default_variant = ProductVariant.objects.create(
+            product=product,
+            category=product_category,
+            price=Decimal('20.00'),
+        )
+        color_variant = ProductVariant.objects.create(
+            product=product,
+            category=product_category,
+            color=product_color,
+            price=Decimal('30.00'),
+        )
+
+        client.post(reverse('order:add_item'), {
+            'product': product.id,
+            'size': Size.ADULT_M,
+            'quantity': 1,
+            'category': product_category.id,
+            'color': product_color.id,
+        })
+
+        order_items = client.session.get('current_order_items', [])
+        assert Decimal(order_items[0]['price']) == color_variant.price
+        assert Decimal(order_items[0]['price']) != default_variant.price
+
     def test_add_item_size_upcharge(self, client, product, product_variant):
         """Test that size upcharges are not applied at add time"""
         response = client.post(reverse('order:add_item'), {
@@ -670,6 +697,17 @@ class TestAdminViews:
         """Test that admin can access product dashboard"""
         response = authenticated_client.get(reverse('order:product_dashboard'))
         assert response.status_code == 200
+
+    def test_pricing_modal_shows_only_the_products_rules(
+        self, authenticated_client, product, product_variant
+    ):
+        response = authenticated_client.get(
+            reverse('order:add_product_variant', args=[product.id])
+        )
+
+        assert response.status_code == 200
+        assert b'Pricing & availability' in response.content
+        assert str(product_variant.price).encode() in response.content
 
     def test_order_dashboard_requires_admin(self, client):
         """Test that order dashboard requires admin login"""

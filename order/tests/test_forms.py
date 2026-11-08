@@ -10,7 +10,7 @@ from order.forms import (
 )
 from order.models import (
     Product, Collection, ProductCategory, ProductColor,
-    Size, OrderItem
+    ProductVariant, Size, OrderItem
 )
 
 
@@ -160,6 +160,18 @@ class TestProductVariantForm:
         })
         assert not form.is_valid()
         assert 'price' in form.errors
+
+    def test_variant_form_only_offers_the_products_choices(
+        self, product, product_category, product_color
+    ):
+        other_category = ProductCategory.objects.create(name="Other category")
+        other_color = ProductColor.objects.create(name="Other color")
+        form = ProductVariantForm(product=product)
+
+        assert list(form.fields["category"].queryset) == [product_category]
+        assert list(form.fields["color"].queryset) == [product_color]
+        assert other_category not in form.fields["category"].queryset
+        assert other_color not in form.fields["color"].queryset
 
     def test_variant_form_negative_price(self, product_category):
         """Test validation with negative price"""

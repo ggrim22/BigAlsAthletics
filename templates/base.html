@@ -231,15 +231,17 @@
     <div id="cart-sidebar"
          class="fixed top-0 right-0 h-full max-sm:w-[22rem] bg-white shadow-2xl z-50 transform translate-x-full transition-transform duration-300 flex flex-col">
 
-      <div class="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-stone-600 to-stone-700">
-        <h2 class="text-2xl font-bold text-white flex items-center gap-2">
+      <div class="cart-sidebar__header">
+        <h2 class="cart-sidebar__title">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
           </svg>
           Your Cart
         </h2>
-        <button onclick="toggleCart()"
-                class="text-white hover:text-gray-200 transition-colors p-2 hover:bg-white/10 rounded-lg">
+        <button type="button"
+                onclick="toggleCart()"
+                class="cart-sidebar__close"
+                aria-label="Close cart">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
           </svg>

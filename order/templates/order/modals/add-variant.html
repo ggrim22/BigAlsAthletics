@@ -1,16 +1,49 @@
 {% load crispy_forms_tags %}
 
-<form hx-post="{{ request.path }}" class="modal-content" enctype="multipart/form-data">
+<form hx-post="{{ request.path }}" class="modal-content product-modal pricing-modal" enctype="multipart/form-data">
   {% csrf_token %}
-  <div class="modal-header">
-    <h5 class="modal-title">Create Price For Product Categories</h5>
-    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  <div class="modal-header product-modal__header">
+    <div>
+      <p class="product-modal__eyebrow">{{ product.name }}</p>
+      <h5 class="modal-title">Pricing & availability</h5>
+    </div>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
   </div>
-  <div class="modal-body">
-      {{ form|crispy }}
+  <div class="modal-body product-modal__body">
+    {% if variants %}
+      <section class="product-modal__section">
+        <h6>Current rules</h6>
+        <div class="pricing-rule-list">
+          {% for variant in variants %}
+            <div class="pricing-rule-list__item">
+              <div>
+                <strong>{{ variant.category.name }}</strong>
+                <span>{{ variant.color.name|default:"All colors" }}</span>
+                {% if variant.available_sizes %}
+                  <small>{{ variant.available_sizes|join:", " }}</small>
+                {% else %}
+                  <small>All default sizes</small>
+                {% endif %}
+              </div>
+              <strong>${{ variant.price }}</strong>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+
+    <section class="product-modal__section">
+      <h6>Pricing rule</h6>
+      <div class="row g-3">
+        <div class="col-md-6">{{ form.category|as_crispy_field }}</div>
+        <div class="col-md-6">{{ form.color|as_crispy_field }}</div>
+        <div class="col-12">{{ form.price|as_crispy_field }}</div>
+        <div class="col-12 product-modal__choice-list">{{ form.available_sizes|as_crispy_field }}</div>
+      </div>
+    </section>
   </div>
-  <div class="modal-footer">
-    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-    <button type="submit" class="btn btn-primary">Save</button>
+  <div class="modal-footer product-modal__footer">
+    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+    <button type="submit" class="btn btn-dark px-4">Save pricing rule</button>
   </div>
 </form>

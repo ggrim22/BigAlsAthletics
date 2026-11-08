@@ -27,10 +27,26 @@ class ProductVariantForm(forms.ModelForm):
         widget=forms.CheckboxSelectMultiple,
         required=False
     )
+    price = forms.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        min_value=0,
+        widget=forms.NumberInput(attrs={"min": "0", "step": "0.01", "inputmode": "decimal"}),
+    )
 
     class Meta:
         model = ProductVariant
         fields = ["category", "price", "color"]
+
+    def __init__(self, *args, product=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if product:
+            self.fields["category"].queryset = product.category.order_by("name")
+            self.fields["color"].queryset = product.colors.order_by("name")
+            self.fields["available_sizes"].choices = product.get_available_sizes
+
+        self.fields["color"].required = False
+        self.fields["color"].empty_label = "All colors (category default)"
 
 class ProductForm(forms.ModelForm):
     available_sizes = forms.MultipleChoiceField(
@@ -53,7 +69,23 @@ class ProductForm(forms.ModelForm):
 
     class Meta:
         model = Product
-        exclude = ['back_name']
+        fields = [
+            "name", "collection", "image", "category", "colors",
+            "available_sizes", "has_back_name", "active",
+        ]
+        labels = {
+            "name": "Product name",
+            "category": "Available categories",
+            "colors": "Available colors",
+            "available_sizes": "Available sizes",
+            "has_back_name": "Offer a back-name add-on",
+        }
+        help_texts = {
+            "image": "Images are automatically resized to 344 × 250 pixels.",
+            "category": "Customers choose from these categories when ordering.",
+            "colors": "Customers choose from these colors when ordering.",
+            "available_sizes": "These are the default sizes. A pricing rule can narrow them further.",
+        }
 
 
 class CollectionForm(forms.ModelForm):

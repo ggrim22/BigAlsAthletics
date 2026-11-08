@@ -1,0 +1,57 @@
+{% load crispy_forms_tags %}
+
+<form hx-post="{{ request.path }}" class="modal-content product-modal" enctype="multipart/form-data">
+  {% csrf_token %}
+  <div class="modal-header product-modal__header">
+    <div>
+      <p class="product-modal__eyebrow">Catalog</p>
+      <h5 class="modal-title">{{ title }}</h5>
+    </div>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+  </div>
+
+  <div class="modal-body product-modal__body">
+    {{ form.non_field_errors }}
+
+    <section class="product-modal__section">
+      <h6>Product details</h6>
+      <div class="row g-3">
+        <div class="col-md-7">{{ form.name|as_crispy_field }}</div>
+        <div class="col-md-5">{{ form.collection|as_crispy_field }}</div>
+        <div class="col-12">{{ form.image|as_crispy_field }}</div>
+      </div>
+    </section>
+
+    <section class="product-modal__section">
+      <div class="d-flex align-items-start justify-content-between gap-3 mb-2">
+        <div>
+          <h6>Customer choices</h6>
+        </div>
+      </div>
+      <div class="row g-3">
+        <div class="col-md-6 product-modal__choice-list">{{ form.category|as_crispy_field }}</div>
+        <div class="col-md-6 product-modal__choice-list">{{ form.colors|as_crispy_field }}</div>
+        <div class="col-12 product-modal__choice-list">{{ form.available_sizes|as_crispy_field }}</div>
+      </div>
+    </section>
+
+    <section class="product-modal__section product-modal__options">
+      <h6>Availability</h6>
+      <div class="product-modal__toggle-list">
+        <div class="product-modal__toggle">
+          {{ form.has_back_name }}
+          <label for="{{ form.has_back_name.id_for_label }}">Back-name add-on</label>
+        </div>
+        <div class="product-modal__toggle">
+          {{ form.active }}
+          <label for="{{ form.active.id_for_label }}">Active</label>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal-footer product-modal__footer">
+    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+    <button type="submit" class="btn btn-dark px-4">{{ submit_label }}</button>
+  </div>
+</form>
