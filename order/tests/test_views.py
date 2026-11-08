@@ -2,6 +2,7 @@
 Tests for order views
 """
 import pytest
+import stripe
 from django.core.cache import cache
 from decimal import Decimal
 from unittest.mock import Mock, patch
@@ -303,9 +304,8 @@ class TestConfirmOrderView:
         call_args = mock_stripe.call_args
         assert call_args is not None
 
-        # Check payment method types
-        assert 'payment_method_types' in call_args.kwargs
-        assert 'card' in call_args.kwargs['payment_method_types']
+        # Stripe Checkout now uses payment methods enabled in the Dashboard.
+        assert 'payment_method_types' not in call_args.kwargs
 
         # Check mode
         assert call_args.kwargs['mode'] == 'payment'
@@ -627,6 +627,34 @@ class TestConfirmOrderView:
         })
         assert response.status_code == 302
         assert response.url == reverse('order:index')
+
+    @patch('stripe.checkout.Session.create')
+    def test_confirm_order_preserves_cart_when_stripe_rejects_request(self, mock_stripe, client, product):
+        """A Stripe API error should not clear the customer's cart or return a 500."""
+        mock_stripe.side_effect = stripe.InvalidRequestError(
+            "Invalid checkout request", "payment_method_types"
+        )
+        session = client.session
+        session['current_order_items'] = [{
+            'product_id': product.id,
+            'product_name': product.name,
+            'size': Size.ADULT_L,
+            'quantity': 1,
+            'price': '25.00',
+            'color_name': 'Red',
+            'category_name': 'T-Shirt',
+            'back_name': '',
+        }]
+        session.save()
+
+        response = client.post(reverse('order:confirm_order'), {
+            'customer_name': 'Test User',
+            'customer_email': 'test@example.com',
+        })
+
+        assert response.status_code == 302
+        assert response.url == reverse('order:index')
+        assert len(client.session['current_order_items']) == 1
 
     @patch('stripe.checkout.Session.create')
     def test_confirm_order_session_cleared(self, mock_stripe, client, product):

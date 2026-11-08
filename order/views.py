@@ -333,15 +333,19 @@ def confirm_order(request):
         "session_key": request.session.session_key,
     }
 
-    checkout_session = stripe.checkout.Session.create(
-        payment_method_types=['card'],
-        mode='payment',
-        line_items=line_items,
-        success_url=request.build_absolute_uri(reverse('order:payment-success')) + '?session_id={CHECKOUT_SESSION_ID}',
-        cancel_url=request.build_absolute_uri(reverse('order:payment-cancel')),
-        metadata=metadata,
-        customer_email=customer_data["customer_email"],
-    )
+    try:
+        checkout_session = stripe.checkout.Session.create(
+            mode='payment',
+            line_items=line_items,
+            success_url=request.build_absolute_uri(reverse('order:payment-success')) + '?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url=request.build_absolute_uri(reverse('order:payment-cancel')),
+            metadata=metadata,
+            customer_email=customer_data["customer_email"],
+        )
+    except stripe.StripeError:
+        logger.exception("Unable to create Stripe Checkout Session")
+        messages.error(request, "Unable to start checkout. Please try again.")
+        return redirect("order:index")
 
     request.session.pop("current_order_items", None)
 
