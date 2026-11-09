@@ -1,5 +1,4 @@
 import json
-from decimal import Decimal
 from django.core.mail import send_mail
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
@@ -7,7 +6,8 @@ import stripe
 
 from core import settings
 from core.settings import STRIPE_WEBHOOK_SECRET
-from .models import Order, OrderItem, Product, Size
+from .models import Size
+from .stripe_orders import create_order_from_checkout_session
 from .views import logger
 
 
@@ -28,67 +28,20 @@ def stripe_webhook(request):
         logger.error("Invalid signature in Stripe webhook")
         return HttpResponse(status=400)
 
-    if event['type'] == 'checkout.session.completed':
+    if event['type'] in ('checkout.session.completed', 'checkout.session.async_payment_succeeded'):
         session = event['data']['object']
-
-        customer_name = session['metadata'].get('customer_name', '')
-        customer_email = session['metadata'].get('customer_email', '')
-
         try:
-            order = Order.objects.create(
-                customer_name=customer_name,
-                customer_email=customer_email,
-                stripe_session_id=session['id'],
-                has_paid=True,
-            )
+            order, created = create_order_from_checkout_session(session['id'])
+            if not created:
+                return HttpResponse(status=200)
 
-            line_items = stripe.checkout.Session.list_line_items(
-                session['id'],
-                limit=100,
-                expand=['data.price.product']
+            total = sum(
+                (item.product_cost or 0) * item.quantity for item in order.items.all()
             )
-
-            total = Decimal('0.00')
             items_list = []
-
-            for line_item in line_items.data:
-                product_name = ""
-                metadata = {}
-
-                if hasattr(line_item.price, 'product') and isinstance(line_item.price.product, stripe.Product):
-                    product_name = line_item.price.product.name
-                    metadata = line_item.price.product.metadata if hasattr(line_item.price.product, 'metadata') else {}
-
-                size = metadata.get('size', '')
-                color = metadata.get('color', '')
-                back_name = metadata.get('back_name', '')
-                category = metadata.get('category', '')
-                product_id = metadata.get('product_id', '')  # ADD THIS - we need to store product_id in metadata
-
-                unit_price = Decimal(line_item.amount_total) / 100 / line_item.quantity
-
-                product = None
-                if product_id:
-                    product = Product.objects.filter(pk=product_id).first()
-
-                order_item = OrderItem.objects.create(
-                    order=order,
-                    product=product,
-                    product_name=product_name,
-                    size=size,
-                    quantity=line_item.quantity,
-                    product_color=color,
-                    product_category=category,
-                    product_cost=unit_price,
-                    back_name=back_name if back_name else "",
-                )
-
-                item_total = order_item.product_cost * order_item.quantity
-                total += item_total
-
+            for order_item in order.items.all():
                 size_display = dict(Size.choices).get(order_item.size, order_item.size) if order_item.size else 'N/A'
                 back_name_text = f" (Back: {order_item.back_name})" if order_item.back_name else ""
-
                 items_list.append(
                     f"  - {order_item.product_name} - {order_item.product_color or 'N/A'}\n"
                     f"    Size: {size_display}\n"
@@ -96,7 +49,7 @@ def stripe_webhook(request):
                     f"    Price: ${order_item.product_cost} each{back_name_text}"
                 )
 
-            logger.info(f"Successfully created order {order.id} from Stripe session {session['id']}")
+            logger.info("Created order %s from Stripe session %s", order.id, session['id'])
 
             try:
                 items_summary = "\n\n".join(items_list) if items_list else "No items"
@@ -131,10 +84,8 @@ def stripe_webhook(request):
             except Exception as e:
                 logger.error(f"Error sending order notification email: {str(e)}")
 
-        except Exception as e:
-            logger.error(f"Error creating order from Stripe session {session['id']}: {str(e)}")
-            import traceback
-            logger.error(traceback.format_exc())
+        except Exception:
+            logger.exception("Error creating order from Stripe session %s", session['id'])
             return HttpResponse(status=500)
 
     return HttpResponse(status=200)

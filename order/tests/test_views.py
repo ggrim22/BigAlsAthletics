@@ -15,6 +15,7 @@ from order.models import (
     Product, Order, OrderItem, Collection, Size,
     ProductCategory, ProductColor, ProductVariant
 )
+from order.stripe_orders import create_order_from_checkout_session
 
 
 @pytest.fixture
@@ -949,3 +950,72 @@ class TestContactView:
         else:
             # Form had validation errors
             assert 'form' in response.context
+
+
+@pytest.mark.django_db
+class TestStripeOrderRecording:
+    @patch('order.stripe_orders.stripe.checkout.Session.list_line_items')
+    @patch('order.stripe_orders.stripe.checkout.Session.retrieve')
+    def test_paid_session_creates_order_and_items(
+        self, mock_retrieve, mock_line_items, product
+    ):
+        mock_retrieve.return_value = {
+            'payment_status': 'paid',
+            'metadata': {
+                'customer_name': 'Jane Customer',
+                'customer_email': 'jane@example.com',
+            },
+        }
+        mock_line_items.return_value = {
+            'data': [{
+                'description': product.name,
+                'amount_total': 5000,
+                'quantity': 2,
+                'price': {'product': {
+                    'name': product.name,
+                    'metadata': {
+                        'product_id': str(product.id),
+                        'size': Size.ADULT_L,
+                        'color': 'Red',
+                        'category': 'T-Shirt',
+                        'back_name': 'SMITH',
+                    },
+                }},
+            }],
+        }
+
+        order, created = create_order_from_checkout_session('cs_paid_test')
+
+        assert created is True
+        assert order.has_paid is True
+        assert order.customer_email == 'jane@example.com'
+        item = order.items.get()
+        assert item.product == product
+        assert item.product_cost == Decimal('25.00')
+        assert item.quantity == 2
+
+        duplicate, created = create_order_from_checkout_session('cs_paid_test')
+        assert created is False
+        assert duplicate.pk == order.pk
+        mock_retrieve.assert_called_once()
+
+    @patch('order.stripe_orders.stripe.checkout.Session.retrieve')
+    def test_unpaid_session_is_not_recorded(self, mock_retrieve):
+        mock_retrieve.return_value = {'payment_status': 'unpaid', 'metadata': {}}
+
+        with pytest.raises(ValueError, match='has not been paid'):
+            create_order_from_checkout_session('cs_unpaid_test')
+
+        assert not Order.objects.filter(stripe_session_id='cs_unpaid_test').exists()
+
+    @patch('order.views.create_order_from_checkout_session')
+    def test_payment_success_uses_shared_order_recorder(self, mock_record, client, paid_order):
+        mock_record.return_value = (paid_order, False)
+
+        response = client.get(
+            reverse('order:payment-success'), {'session_id': paid_order.stripe_session_id}
+        )
+
+        assert response.status_code == 200
+        assert response.context['order'] == paid_order
+        mock_record.assert_called_once_with(paid_order.stripe_session_id)

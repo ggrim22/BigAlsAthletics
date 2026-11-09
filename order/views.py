@@ -22,6 +22,7 @@ from core.utils import ExcelDownloadResponse
 from .forms import ProductForm, CollectionForm, ColorForm, CategoryForm, ProductVariantForm, CollectionSelectForm, \
     CollectionFilterForm, ContactForm, ProductFilterForm
 from .models import Product, Size, Order, OrderItem, Collection, ProductColor, ProductCategory, ProductVariant
+from .stripe_orders import create_order_from_checkout_session
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -375,68 +376,16 @@ def payment_success(request):
         return redirect("order:index")
 
     try:
-        order = Order.objects.filter(stripe_session_id=session_id).first()
-
-        if not order:
-            session = stripe.checkout.Session.retrieve(session_id)
-
-            order = Order.objects.create(
-                customer_name=session['metadata'].get('customer_name', ''),
-                customer_email=session['metadata'].get('customer_email', ''),
-                stripe_session_id=session_id,
-                has_paid=True,
-            )
-
-            line_items = stripe.checkout.Session.list_line_items(
-                session_id,
-                limit=100,
-                expand=['data.price.product']
-            )
-
-            for line_item in line_items.data:
-                product_name = ""
-                if hasattr(line_item.price, 'product') and isinstance(line_item.price.product, stripe.Product):
-                    product_name = line_item.price.product.name
-                    metadata = line_item.price.product.metadata if hasattr(line_item.price.product, 'metadata') else {}
-                else:
-                    metadata = {}
-
-                size = metadata.get('size', '')
-                color = metadata.get('color', '')
-                back_name = metadata.get('back_name', '')
-                category = metadata.get('category', '')
-                product_id = metadata.get('product_id', '')  # Get product_id from metadata
-
-                unit_price = Decimal(line_item.amount_total) / 100 / line_item.quantity
-
-                product = None
-                if product_id:
-                    try:
-                        product = Product.objects.get(pk=int(product_id))
-                    except (Product.DoesNotExist, ValueError):
-                        product = None
-
-                OrderItem.objects.create(
-                    order=order,
-                    product=product,
-                    product_name=product_name,
-                    size=size,
-                    quantity=line_item.quantity,
-                    product_color=color,
-                    product_category=category,
-                    product_cost=unit_price,
-                    back_name=back_name if back_name else "",
-                )
+        order, _ = create_order_from_checkout_session(session_id)
 
         total_cost = Decimal("0.00")
         for item in order.items.all():
             price = item.product_cost or Decimal("0.00")
             total_cost += price * item.quantity
 
-    except Exception as e:
-        print(f"Payment success error: {e}")
-        import traceback
-        traceback.print_exc()
+    except Exception:
+        logger.exception("Unable to record paid Stripe session %s", session_id)
+        messages.error(request, "Your payment was received, but we could not record the order yet. Please contact us with your receipt.")
         order = None
         total_cost = Decimal("0.00")
 
