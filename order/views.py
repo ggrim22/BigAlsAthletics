@@ -18,6 +18,7 @@ from django.urls import reverse
 
 from core import settings
 from core.http import HTMXResponse
+from core.notify import send_alert
 from core.utils import ExcelDownloadResponse
 from .forms import ProductForm, CollectionForm, ColorForm, CategoryForm, ProductVariantForm, CollectionSelectForm, \
     CollectionFilterForm, ContactForm, ProductFilterForm
@@ -429,6 +430,16 @@ def payment_success(request):
 
     except Exception:
         logger.exception("Unable to record paid Stripe session %s", session_id)
+        send_alert(
+            summary=f"PAID ORDER NOT RECORDED - Stripe session {session_id}",
+            detail=(
+                "A customer reached the success page after paying, but the order "
+                "could not be saved.\n\n"
+                f"Session: {session_id}\n"
+                "Check the Stripe dashboard and create the order manually if needed."
+            ),
+            urgent=True,
+        )
         messages.error(request, "Your payment was received, but we could not record the order yet. Please contact us with your receipt.")
         order = None
         total_cost = Decimal("0.00")

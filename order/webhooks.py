@@ -5,6 +5,7 @@ from django.http import HttpResponse
 import stripe
 
 from core import settings
+from core.notify import send_alert
 from core.settings import STRIPE_WEBHOOK_SECRET
 from .models import Size
 from .stripe_orders import create_order_from_checkout_session
@@ -86,8 +87,25 @@ def stripe_webhook(request):
             except Exception as e:
                 logger.error(f"Error sending order notification email: {str(e)}")
 
+            send_alert(
+                summary=f"New order #{order.id} - ${total:.2f} - {order.customer_name or 'no name'}",
+                urgent=True,
+            )
+
         except Exception:
             logger.exception("Error creating order from Stripe session %s", session['id'])
+            # The customer has already paid at this point, so this needs a human.
+            send_alert(
+                summary=f"PAID ORDER NOT RECORDED - Stripe session {session['id']}",
+                detail=(
+                    "A Stripe webhook reported a completed payment but the order "
+                    "could not be saved.\n\n"
+                    f"Session: {session['id']}\n"
+                    "Check the Stripe dashboard for the payment and create the "
+                    "order manually if needed."
+                ),
+                urgent=True,
+            )
             return HttpResponse(status=500)
 
     return HttpResponse(status=200)

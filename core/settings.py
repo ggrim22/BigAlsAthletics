@@ -233,12 +233,73 @@ else:
     EMAIL_HOST_USER = "apikey"
     EMAIL_HOST_PASSWORD = config("SENDGRID_API_KEY", default="")
 
+# ============================================================
+# ALERTS
+# ============================================================
+# Comma-separated. SMS works through carrier email-to-SMS gateways, e.g.
+#   Verizon  5551234567@vtext.com
+#   AT&T     5551234567@txt.att.net
+#   T-Mobile 5551234567@tmomail.net
+# Leave either blank to disable that channel.
+
+
+def _csv_setting(name):
+    return [item.strip() for item in config(name, default="").split(",") if item.strip()]
+
+
+ALERT_EMAIL_RECIPIENTS = _csv_setting("ALERT_EMAILS") or ([CONTACT_EMAIL] if CONTACT_EMAIL else [])
+ALERT_SMS_RECIPIENTS = _csv_setting("ALERT_SMS")
+
+# ============================================================
+# LOGGING
+# ============================================================
+# Level is INFO so the breadcrumbs around an order (created, email sent) are in
+# `heroku logs` when something goes wrong; ERROR alone only shows the fallout.
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    "handlers": {"console": {"class": "logging.StreamHandler"}},
-    "root": {"handlers": ["console"], "level": "ERROR"},
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {name} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {"class": "logging.StreamHandler", "formatter": "verbose"},
+    },
+    "root": {"handlers": ["console"], "level": "INFO"},
+    "loggers": {
+        # Django's request logger is noisy at INFO (every 4xx); keep it at WARNING.
+        "django.request": {"handlers": ["console"], "level": "WARNING", "propagate": False},
+        "django.server": {"handlers": ["console"], "level": "WARNING", "propagate": False},
+        "order": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "core": {"handlers": ["console"], "level": "INFO", "propagate": False},
+    },
 }
+
+# ============================================================
+# SENTRY (error monitoring)
+# ============================================================
+# No-op until SENTRY_DSN is set, so local and CI runs are unaffected.
+
+SENTRY_DSN = config("SENTRY_DSN", default="")
+
+if SENTRY_DSN:
+    try:
+        import sentry_sdk
+
+        sentry_sdk.init(
+            dsn=SENTRY_DSN,
+            environment=config("SENTRY_ENVIRONMENT", default="production"),
+            # Sample rate for performance traces; errors are always captured.
+            traces_sample_rate=float(config("SENTRY_TRACES_SAMPLE_RATE", default="0.0")),
+            send_default_pii=False,
+        )
+    except ImportError:  # pragma: no cover - dependency missing in this env
+        import warnings
+
+        warnings.warn("SENTRY_DSN is set but sentry-sdk is not installed; skipping.")
 
 
 
