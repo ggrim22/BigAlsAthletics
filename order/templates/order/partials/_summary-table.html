@@ -1,8 +1,8 @@
-<div class="max-w-7xl mx-auto mt-4">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
 
-  <div class="overflow-x-auto shadow-lg rounded-lg border border-gray-200">
-      <table class="min-w-full text-center bg-white">
-        <thead class="bg-stone-600 text-white">
+  <div class="overflow-x-auto rounded-lg">
+      <table class="min-w-full text-center bg-zinc-800">
+        <thead class="bg-zinc-700 text-white">
           <tr>
             <th class="text-left px-4 py-3 font-semibold">Product</th>
             {% for code in size_codes %}
@@ -13,21 +13,21 @@
         </thead>
         <tbody>
           {% for row in summary_table %}
-            <tr class="{% cycle 'bg-white' 'bg-gray-50' %} hover:bg-gray-100 transition-colors">
-              <td class="text-left px-4 py-3 font-bold align-middle border-b border-gray-200">
+            <tr class="{% cycle 'bg-zinc-800' 'bg-zinc-900' %} hover:bg-zinc-700 transition-colors">
+              <td class="text-left px-4 py-3 font-bold align-middle border-b border-zinc-700">
                 {{ row.product_name }}
-                <small class="text-gray-500 block font-normal text-sm">
+                <small class="text-zinc-500 block font-normal text-sm">
                   {{ row.product_category }}{% if row.product_color %} — {{ row.product_color }}{% endif %}
                 </small>
               </td>
               {% for size in row.sizes %}
-                <td class="px-4 py-3 align-middle border-b border-gray-200">{{ size }}</td>
+                <td class="px-4 py-3 align-middle border-b border-zinc-700">{{ size }}</td>
               {% endfor %}
-              <td class="px-4 py-3 font-bold align-middle border-b border-gray-200">{{ row.row_total }}</td>
+              <td class="px-4 py-3 font-bold align-middle border-b border-zinc-700">{{ row.row_total }}</td>
             </tr>
           {% empty %}
             <tr>
-              <td colspan="{{ size_codes|length|add:'2' }}" class="px-4 py-8 text-gray-500 text-center">
+              <td colspan="{{ size_codes|length|add:'2' }}" class="px-4 py-8 text-zinc-500 text-center">
                 No orders found
               </td>
             </tr>

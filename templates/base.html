@@ -1,4 +1,5 @@
 {% load static %}
+{% load static_version %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -7,7 +8,7 @@
     <title>{% block title %}Big Al's Athletics{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <script src="{% static 'js/htmx.js' %}"></script>
+    <script src="{% static_v 'js/htmx.js' %}"></script>
     <script>
       // Configure HTMX to include CSRF token in all requests
       document.addEventListener('DOMContentLoaded', function() {
@@ -25,144 +26,109 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
     />
-    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+    <link rel="stylesheet" href="{% static_v 'css/style.css' %}" />
     {% block head %}{% endblock %}
 </head>
-<body class="bg-stone-200">
-  <nav class="{% block nav_class %}mx-12 relative{% endblock %}">
-    <div class="flex justify-between items-center">
-      <div>
-        <a href="{% url 'order:index' %}">
-          <img src="{% static 'images/bigalslogo.png' %}" id="logo" alt="Logo" height="32">
+<body class="bg-zinc-900 text-zinc-100">
+  <nav class="{% block nav_class %}sticky top-0 z-40 border-b border-zinc-800/80 bg-zinc-950/85 backdrop-blur-md{% endblock %}">
+    <div class="w-full px-4 sm:px-6 lg:px-8">
+      <div class="flex h-16 sm:h-20 items-center justify-between gap-4">
+
+        <a href="{% url 'order:index' %}"
+           class="flex-shrink-0 inline-flex items-center"
+           aria-label="Big Al's Athletics home">
+          <img src="{% static 'images/bigalslogo.png' %}" id="logo" alt="Big Al's Athletics">
         </a>
-      </div>
 
-      <div class="hidden md:flex justify-end px-4">
-        <div class="flex items-center justify-between py-3">
-          <ul class="flex items-center gap-2">
-            <li>
-              <a class="nav-link hover:text-gray-500 px-3 py-2 rounded transition-colors relative"
-                 href="{% url 'order:index' %}"
-                 data-page="home">
-                Home
-              </a>
-            </li>
-            <li>
-              <a class="nav-link hover:text-gray-500 px-3 py-2 rounded transition-colors relative"
-                 href="{% url 'order:about' %}"
-                 data-page="about">
-                About
-              </a>
-            </li>
-            <li>
-              <a class="nav-link hover:text-gray-500 px-3 py-2 rounded transition-colors relative"
-                 href="{% url 'order:contact' %}"
-                 data-page="contact">
-                Contact
-              </a>
-            </li>
-            {% if user.is_authenticated %}
-            <li>
-              <a class="nav-link hover:text-gray-500 px-3 py-2 rounded transition-colors relative"
-                 href="{% url 'order:order_dashboard' %}"
-                 data-page="orders">
-                Manage Orders
-              </a>
-            </li>
-            <li>
-              <a class="nav-link hover:text-gray-500 px-3 py-2 rounded transition-colors relative"
-                 href="{% url 'order:product_dashboard' %}"
-                 data-page="products">
-                Manage Products
-              </a>
-            </li>
-            <li>
-              <a class="nav-link hover:text-gray-500 px-3 py-2 rounded transition-colors relative"
-                 href="{% url 'order:collection_dashboard' %}"
-                 data-page="collections">
-                Manage Collections
-              </a>
-            </li>
-            <li>
-              <form method="post" action="{% url 'logout' %}" class="inline">
-                {% csrf_token %}
-                <button type="submit" class="hover:text-gray-500 px-3 py-2 rounded transition-colors bg-transparent border-0">Logout</button>
-              </form>
-            </li>
-            {% endif %}
-            <li>
-              <button onclick="toggleCart()"
-                      class="relative inline-flex items-center text-gray-900 hover:text-gray-600 transition-colors px-3 py-2 group">
-                <svg class="w-6 h-6 transform group-hover:scale-110 transition-transform duration-200"
-                     fill="none"
-                     stroke="currentColor"
-                     viewBox="0 0 24 24"
-                     stroke-width="2">
-                  <path stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
-                </svg>
-
-                <span id="cart-count"
-                      class="absolute -top-1 -right-1 flex items-center justify-center
-                             min-w-[1.25rem] h-5 px-1.5 text-xs font-semibold
-                             text-white bg-red-600 rounded-full border border-white
-                             shadow-lg"
-                      style="display: none;">
-                  0
-                </span>
+        <!-- Desktop navigation -->
+        <div class="hidden md:flex items-center gap-1">
+          <a class="nav-link px-3 py-2 text-sm font-medium text-zinc-400 rounded-lg transition-colors hover:text-white relative"
+             href="{% url 'order:index' %}" data-page="home">Home</a>
+          <a class="nav-link px-3 py-2 text-sm font-medium text-zinc-400 rounded-lg transition-colors hover:text-white relative"
+             href="{% url 'order:about' %}" data-page="about">About</a>
+          <a class="nav-link px-3 py-2 text-sm font-medium text-zinc-400 rounded-lg transition-colors hover:text-white relative"
+             href="{% url 'order:contact' %}" data-page="contact">Contact</a>
+          {% if user.is_authenticated %}
+            <a class="nav-link px-3 py-2 text-sm font-medium text-zinc-400 rounded-lg transition-colors hover:text-white relative"
+               href="{% url 'order:order_dashboard' %}" data-page="orders">Orders</a>
+            <a class="nav-link px-3 py-2 text-sm font-medium text-zinc-400 rounded-lg transition-colors hover:text-white relative"
+               href="{% url 'order:product_dashboard' %}" data-page="products">Products</a>
+            <a class="nav-link px-3 py-2 text-sm font-medium text-zinc-400 rounded-lg transition-colors hover:text-white relative"
+               href="{% url 'order:collection_dashboard' %}" data-page="collections">Collections</a>
+            <form method="post" action="{% url 'logout' %}" class="inline">
+              {% csrf_token %}
+              <button type="submit"
+                      class="px-3 py-2 text-sm font-medium text-zinc-400 rounded-lg transition-colors hover:text-white bg-transparent border-0">
+                Logout
               </button>
-            </li>
-          </ul>
+            </form>
+          {% endif %}
+
+          <div class="ml-2 pl-2 border-l border-zinc-800">
+            <button onclick="toggleCart()"
+                    class="relative inline-flex items-center justify-center w-10 h-10 rounded-lg text-zinc-300 transition-colors hover:text-white hover:bg-zinc-800/80"
+                    aria-label="Open cart">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+              </svg>
+              <span id="cart-count"
+                    class="absolute top-0.5 right-0.5 flex items-center justify-center min-w-[1.1rem] h-[1.1rem] px-1 text-[10px] font-semibold text-zinc-900 bg-zinc-100 rounded-full tabular-nums"
+                    style="display: none;">0</span>
+            </button>
+          </div>
         </div>
-      </div>
 
-      <div class="md:hidden flex items-center gap-2">
-        <button onclick="toggleCart()"
-                class="relative inline-flex items-center text-gray-900 hover:text-gray-600 transition-colors p-2">
-          <svg class="w-6 h-6"
-               fill="none"
-               stroke="currentColor"
-               viewBox="0 0 24 24"
-               stroke-width="2">
-            <path stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
-          </svg>
+        <!-- Mobile controls -->
+        <div class="flex md:hidden items-center gap-1">
+          <button onclick="toggleCart()"
+                  class="relative inline-flex items-center justify-center w-10 h-10 rounded-lg text-zinc-300 transition-colors hover:text-white hover:bg-zinc-800/80"
+                  aria-label="Open cart">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+            </svg>
+            <span id="cart-count-mobile"
+                  class="absolute top-0.5 right-0.5 flex items-center justify-center min-w-[1.1rem] h-[1.1rem] px-1 text-[10px] font-semibold text-zinc-900 bg-zinc-100 rounded-full tabular-nums"
+                  style="display: none;">0</span>
+          </button>
 
-          <span id="cart-count-mobile"
-                class="absolute -top-1 -right-1 flex items-center justify-center
-                       min-w-[1.25rem] h-5 px-1.5 text-xs font-semibold
-                       text-white bg-red-600 rounded-full border border-white
-                       shadow-lg"
-                style="display: none;">
-            0
-          </span>
-        </button>
-
-        <button id="mobile-menu-button" class="p-2 text-gray-600 hover:text-gray-900">
-          <i class="fas fa-bars text-2xl"></i>
-        </button>
+          <button id="mobile-menu-button"
+                  class="inline-flex items-center justify-center w-10 h-10 rounded-lg text-zinc-300 transition-colors hover:text-white hover:bg-zinc-800/80"
+                  aria-label="Open menu">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- Mobile Menu -->
-    <ul id="mobile-menu" class="hidden flex-col gap-2 mt-2 md:hidden bg-white rounded-lg shadow-lg p-4 absolute right-0 w-56 z-50">
-      <li><a class="block px-3 py-2 rounded hover:bg-gray-100" href="{% url 'order:index' %}">Home</a></li>
-      <li><a class="block px-3 py-2 rounded hover:bg-gray-100" href="{% url 'order:about' %}">About</a></li>
-      <li><a class="block px-3 py-2 rounded hover:bg-gray-100" href="{% url 'order:contact' %}">Contact</a></li>
-      {% if user.is_authenticated %}
-      <li><a class="block px-3 py-2 rounded hover:bg-gray-100" href="{% url 'order:order_dashboard' %}">Manage Orders</a></li>
-      <li><a class="block px-3 py-2 rounded hover:bg-gray-100" href="{% url 'order:product_dashboard' %}">Manage Products</a></li>
-      <li><a class="block px-3 py-2 rounded hover:bg-gray-100" href="{% url 'order:collection_dashboard' %}">Manage Collections</a></li>
-      <li>
-        <form method="post" action="{% url 'logout' %}">
-          {% csrf_token %}
-          <button type="submit" class="block w-full text-left px-3 py-2 rounded hover:bg-gray-100">Logout</button>
-        </form>
-      </li>
-      {% endif %}
-    </ul>
+    <!-- Mobile menu: a full-width sheet under the bar (JS toggles `hidden`). -->
+    <div id="mobile-menu" class="hidden md:hidden border-t border-zinc-800 bg-zinc-950/95 backdrop-blur-md">
+      <div class="w-full px-4 sm:px-6 py-3 space-y-0.5">
+        <a class="block px-3 py-2.5 text-sm font-medium text-zinc-300 rounded-lg transition-colors hover:bg-zinc-800 hover:text-white"
+           href="{% url 'order:index' %}">Home</a>
+        <a class="block px-3 py-2.5 text-sm font-medium text-zinc-300 rounded-lg transition-colors hover:bg-zinc-800 hover:text-white"
+           href="{% url 'order:about' %}">About</a>
+        <a class="block px-3 py-2.5 text-sm font-medium text-zinc-300 rounded-lg transition-colors hover:bg-zinc-800 hover:text-white"
+           href="{% url 'order:contact' %}">Contact</a>
+        {% if user.is_authenticated %}
+          <div class="my-2 border-t border-zinc-800"></div>
+          <a class="block px-3 py-2.5 text-sm font-medium text-zinc-300 rounded-lg transition-colors hover:bg-zinc-800 hover:text-white"
+             href="{% url 'order:order_dashboard' %}">Manage Orders</a>
+          <a class="block px-3 py-2.5 text-sm font-medium text-zinc-300 rounded-lg transition-colors hover:bg-zinc-800 hover:text-white"
+             href="{% url 'order:product_dashboard' %}">Manage Products</a>
+          <a class="block px-3 py-2.5 text-sm font-medium text-zinc-300 rounded-lg transition-colors hover:bg-zinc-800 hover:text-white"
+             href="{% url 'order:collection_dashboard' %}">Manage Collections</a>
+          <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit"
+                    class="block w-full text-left px-3 py-2.5 text-sm font-medium text-zinc-300 rounded-lg transition-colors hover:bg-zinc-800 hover:text-white">
+              Logout
+            </button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
   </nav>
 
   <style>
@@ -175,7 +141,7 @@
       transform: translateX(-50%);
       width: 0;
       height: 2px;
-      background: linear-gradient(to right, #57534e, #44403c);
+      background: linear-gradient(to right, #e4e4e7, #a1a1aa);
       transition: width 0.3s ease;
     }
 
@@ -201,33 +167,27 @@
     /* Beats the Tailwind text-* utilities on the links and buttons. */
     .nav--overlay a,
     .nav--overlay button {
-      color: #fff;
+      color: rgba(255, 255, 255, .82);
     }
 
     .nav--overlay a:hover,
     .nav--overlay button:hover {
-      color: #d6d3d1;
+      color: #fff;
     }
 
     .nav--overlay .nav-link::after {
       background: #fff;
     }
 
-    /* The logo is black line art on transparency, so it would vanish against
-       a dark hero. This repaints it white without needing a second asset. */
-    .nav--overlay #logo {
-      filter: brightness(0) invert(1);
-    }
-
     /* The mobile dropdown is its own white panel, so its links stay dark. */
     .nav--overlay #mobile-menu a,
     .nav--overlay #mobile-menu button {
-      color: #1c1917;
+      color: #e4e4e7;
     }
 
     .nav--overlay #mobile-menu a:hover,
     .nav--overlay #mobile-menu button:hover {
-      color: #000;
+      color: #fff;
     }
   </style>
 
@@ -272,32 +232,31 @@
     </div>
 
     <div id="cart-sidebar"
-         class="fixed top-0 right-0 h-full max-sm:w-[22rem] bg-white shadow-2xl z-50 transform translate-x-full transition-transform duration-300 flex flex-col">
+         class="fixed top-0 right-0 h-full w-full sm:w-[26rem] bg-zinc-950 border-l border-zinc-800 shadow-2xl z-50 transform translate-x-full transition-transform duration-300 flex flex-col">
 
-      <div class="cart-sidebar__header">
-        <h2 class="cart-sidebar__title">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
-          </svg>
-          Your Cart
-        </h2>
+      <div class="flex items-center justify-between gap-3 px-5 py-4 border-b border-zinc-800">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <h2 class="text-base font-semibold tracking-tight text-zinc-100">Your Cart</h2>
+          <span id="cart-sidebar-count"
+                class="inline-flex items-center justify-center min-w-[1.5rem] px-1.5 py-0.5 rounded-full bg-zinc-800 text-zinc-400 text-xs font-medium tabular-nums">0</span>
+        </div>
         <button type="button"
                 onclick="toggleCart()"
-                class="cart-sidebar__close"
+                class="flex-shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
                 aria-label="Close cart">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
           </svg>
         </button>
       </div>
 
       <div id="cart-items-container"
-           class="flex-1 overflow-y-auto p-6 space-y-4"
+           class="flex-1 overflow-y-auto px-4 py-4 space-y-2.5"
            hx-get="{% url 'order:shopping_cart' %}"
            hx-trigger="load, items-updated from:body"
            hx-swap="innerHTML">
         <div class="flex items-center justify-center h-full">
-          <div class="text-center text-gray-400">
+          <div class="text-center text-zinc-500">
             <svg class="w-12 h-12 mx-auto mb-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -307,18 +266,18 @@
         </div>
       </div>
 
-      <div class="border-t border-gray-200 bg-gray-50 p-6 space-y-4">
+      <div class="border-t border-zinc-800 bg-zinc-950 px-5 py-4">
         <form id="checkout-form" method="POST" action="{% url 'order:confirm_order' %}" class="space-y-3">
           {% csrf_token %}
           <input type="text"
                  name="customer_name"
-                 placeholder="Your Name"
-                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-stone-600 focus:border-transparent"
+                 placeholder="Your name"
+                 class="w-full px-3.5 py-2.5 text-sm bg-zinc-900 text-zinc-100 placeholder-zinc-500 border border-zinc-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-transparent transition-shadow"
                  required>
           <input type="email"
                  name="customer_email"
-                 placeholder="Your Email"
-                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-stone-600 focus:border-transparent"
+                 placeholder="Your email"
+                 class="w-full px-3.5 py-2.5 text-sm bg-zinc-900 text-zinc-100 placeholder-zinc-500 border border-zinc-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-transparent transition-shadow"
                  required>
 
           <!-- Shown by togglePlayerNameField (below) only when the cart holds
@@ -328,22 +287,22 @@
                    id="checkout-player-name"
                    name="player_name"
                    maxlength="200"
-                   placeholder="Player Name"
-                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-stone-600 focus:border-transparent"
+                   placeholder="Player name"
+                   class="w-full px-3.5 py-2.5 text-sm bg-zinc-900 text-zinc-100 placeholder-zinc-500 border border-zinc-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-transparent transition-shadow"
                    disabled>
-            <p class="text-xs text-gray-500 mt-1.5">
+            <p class="text-xs text-zinc-500 mt-1.5">
               Applied to every item in this order.
             </p>
           </div>
 
-          <div class="flex items-center justify-between text-lg font-bold pt-2 border-t border-gray-300">
-            <span class="text-gray-700">Total:</span>
-            <span id="cart-total" class="text-2xl text-stone-600">$0.00</span>
+          <div class="flex items-baseline justify-between pt-3 mt-1 border-t border-zinc-800">
+            <span class="text-sm text-zinc-400">Total</span>
+            <span id="cart-total" class="text-xl font-semibold text-zinc-50 tabular-nums">$0.00</span>
           </div>
 
           <button type="submit"
                   id="checkout-btn"
-                  class="w-full bg-stone-700 hover:bg-stone-800 text-white font-bold py-4 rounded-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="w-full bg-zinc-100 hover:bg-white text-zinc-900 text-sm font-semibold tracking-wide py-3 rounded-lg transition-colors shadow-lg disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zinc-100"
                   disabled>
             Proceed to Checkout
           </button>
@@ -354,6 +313,12 @@
     <script nonce="{{ request.csp_nonce }}">
       // Defined here rather than in a static JS file so a stale collected
       // bundle can never leave the cart unable to ask for a player name.
+      // Item count shown beside the cart title.
+      function setCartCount(count) {
+        const badge = document.getElementById('cart-sidebar-count');
+        if (badge) badge.textContent = count;
+      }
+
       function togglePlayerNameField(required) {
         const wrapper = document.getElementById('player-name-field');
         const input = document.getElementById('checkout-player-name');
@@ -371,12 +336,12 @@
       }
     </script>
 
-    <script src="{% static 'js/mobile-menu.js' %}" nonce="{{ request.csp_nonce }}"></script>
+    <script src="{% static_v 'js/mobile-menu.js' %}" nonce="{{ request.csp_nonce }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
-    <script src="{% static 'js/htmx-modal-forms.js' %}"></script>
-    <script src="{% static 'js/toasts.js' %}"></script>
-    <script src="{% static 'js/edit-mode.js' %}" nonce="{{ request.csp_nonce }}"></script>
-    <script src="{% static 'js/cart-update.js' %}" nonce="{{ request.csp_nonce }}"></script>
-    <script src="{% static 'js/cart.js' %}" nonce="{{ request.csp_nonce }}"></script>
+    <script src="{% static_v 'js/htmx-modal-forms.js' %}"></script>
+    <script src="{% static_v 'js/toasts.js' %}"></script>
+    <script src="{% static_v 'js/edit-mode.js' %}" nonce="{{ request.csp_nonce }}"></script>
+    <script src="{% static_v 'js/cart-update.js' %}" nonce="{{ request.csp_nonce }}"></script>
+    <script src="{% static_v 'js/cart.js' %}" nonce="{{ request.csp_nonce }}"></script>
 </body>
 </html>

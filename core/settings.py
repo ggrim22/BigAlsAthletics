@@ -134,6 +134,19 @@ if DEBUG:
     MEDIA_URL = "/media/"
     MEDIA_ROOT = BASE_DIR / "media"
 
+    # In DEBUG, Django skips the content hash in {% static %} URLs, so WhiteNoise
+    # serves /static/css/style.css with no Cache-Control and browsers fall back to
+    # heuristic caching off Last-Modified — which can pin an edited CSS/JS file for
+    # days. Serve edits straight from static/ and never cache them in development.
+    WHITENOISE_AUTOREFRESH = True
+    WHITENOISE_USE_FINDERS = True
+
+    def _dev_no_cache_headers(headers, path, url):
+        """Force revalidation so an edited stylesheet is never served from cache."""
+        headers["Cache-Control"] = "no-cache"
+
+    WHITENOISE_ADD_HEADERS_FUNCTION = _dev_no_cache_headers
+
 else:
     # Production uses S3
     AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID")

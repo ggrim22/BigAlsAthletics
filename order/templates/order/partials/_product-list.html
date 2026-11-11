@@ -1,8 +1,8 @@
-<div class="max-w-7xl mx-auto mt-4">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
 
-  <div class="overflow-x-auto shadow-lg rounded-lg border border-gray-200">
+  <div class="overflow-x-auto rounded-lg">
     <table class="min-w-full">
-      <thead class="bg-stone-600 text-white">
+      <thead class="bg-zinc-700 text-white">
         <tr>
           <th class="px-4 py-3 text-left text-sm font-semibold">Product</th>
           <th class="px-4 py-3 text-left text-sm font-semibold">Collection</th>
@@ -11,9 +11,9 @@
           <th></th>
         </tr>
       </thead>
-      <tbody class="bg-white">
+      <tbody class="bg-zinc-800">
         {% for product in products %}
-          <tr class="{% cycle 'bg-white' 'bg-gray-50' %} border-b border-gray-200 hover:bg-gray-100 transition-colors">
+          <tr class="{% cycle 'bg-zinc-800' 'bg-zinc-900' %} border-b border-zinc-700 hover:bg-zinc-700 transition-colors">
             <td class="px-4 py-3 text-sm">{{ product.name }}</td>
             <td class="px-4 py-3 text-sm">{{ product.collection }}</td>
             <td class="px-4 py-3 text-sm">
@@ -30,7 +30,7 @@
             </td>
             <td class="px-4 py-3 text-sm text-center">
               <div class="dropdown relative inline-block">
-                <button class="p-0 m-0 border-0 bg-transparent text-gray-900 text-xl font-bold hover:text-gray-600"
+                <button class="p-0 m-0 border-0 bg-transparent text-zinc-100 text-xl font-bold hover:text-zinc-200"
                         type="button"
                         data-bs-toggle="dropdown"
                         aria-expanded="false">
@@ -39,7 +39,7 @@
                 <ul class="dropdown-menu" aria-labelledby="actionDropdown">
                   <li>
                     <button type="button"
-                            class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            class="block w-full text-left px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700"
                             hx-get="{% url 'order:product_update' product.id %}"
                             hx-target="#dialog">
                       Edit
@@ -47,7 +47,7 @@
                   </li>
                   <li>
                     <button type="button"
-                            class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            class="block w-full text-left px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700"
                             hx-get="{% url 'order:add_product_variant' product.id %}"
                             hx-target="#dialog">
                       Add/Edit Pricing
@@ -55,7 +55,7 @@
                   </li>
                   <li>
                     <button type="button"
-                            class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                            class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-zinc-700"
                             hx-get="{% url 'order:product_delete' product.id %}"
                             hx-target="#dialog">
                       Delete
@@ -67,7 +67,7 @@
           </tr>
         {% empty %}
           <tr>
-            <td colspan="5" class="px-4 py-8 text-center text-gray-500">
+            <td colspan="5" class="px-4 py-8 text-center text-zinc-500">
               No products yet.
             </td>
           </tr>

@@ -4,11 +4,11 @@
 
 
 {% block content %}
-<div class="max-w-7xl mx-auto mt-12">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 sm:mt-12">
 
-  <div class="flex justify-between items-center mb-4">
+  <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
 
-    <h2 class="text-3xl font-semibold text-stone-800">Order Summary</h2>
+    <h2 class="text-3xl font-semibold text-zinc-100">Order Summary</h2>
 
     <div class="flex items-center space-x-3">
           <form id="filter-form"
@@ -24,7 +24,7 @@
 
           <a id="download-btn"
              href="{% url 'order:order_summary_download' %}"
-             class="px-4 py-2 bg-stone-600 hover:bg-stone-700 text-white font-semibold rounded-lg transition-colors">
+             class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 font-semibold rounded-lg transition-colors">
             Download
           </a>
       </div>

@@ -1,67 +1,81 @@
-<form method="POST" action="{% url 'order:confirm_order' %}" class="modal-content">
+<form method="POST" action="{% url 'order:confirm_order' %}" class="modal-content product-modal choice-modal">
   {% csrf_token %}
-  <div class="modal-header">
-    <h5 class="modal-title">Order Summary</h5>
-    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  <div class="modal-header product-modal__header">
+    <div>
+      <p class="product-modal__eyebrow">Checkout</p>
+      <h5 class="modal-title">Order summary</h5>
+    </div>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
   </div>
 
-  <div class="modal-body">
+  <div class="modal-body product-modal__body">
     {% if order_items %}
-      <ul id="order-items-list" class="list-group mb-3"
-          hx-get="{% url 'order:order_summary' %}"
-          hx-trigger="items-updated from:body"
-          hx-swap="innerHTML">
-        {% for item in order_items %}
-          <li class="list-group-item d-flex justify-content-between align-items-start flex-column flex-md-row">
-            <div>
-              <strong>{{ item.product_name }}</strong> -
-              {{ item.product_category }}/{{ item.product_color }} ({{ item.size }}) × {{ item.quantity }}
+      <section class="product-modal__section">
+        <h6>Items</h6>
+        <ul id="order-items-list" class="summary-item-list"
+            hx-get="{% url 'order:order_summary' %}"
+            hx-trigger="items-updated from:body"
+            hx-swap="innerHTML">
+          {% for item in order_items %}
+            <li class="summary-item">
+              <div class="summary-item__body">
+                <strong>{{ item.product_name }}</strong>
+                <span>{{ item.product_category }} · {{ item.product_color }} · {{ item.size }} × {{ item.quantity }}</span>
+                {% if item.back_name %}
+                  <span class="summary-item__tag">Back: {{ item.back_name }}</span>
+                {% endif %}
+              </div>
+              <button type="button"
+                      class="summary-item__remove"
+                      aria-label="Remove {{ item.product_name }}"
+                      hx-post="{% url 'order:delete-item' item.product_id item.size %}"
+                      hx-target="closest li"
+                      hx-swap="outerHTML swap:1s">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </li>
+          {% empty %}
+            <li class="summary-item"><div class="summary-item__body"><span>No items added yet.</span></div></li>
+          {% endfor %}
+        </ul>
 
-              {% if item.back_name %}
-                <div class="text-muted small mt-1">
-                  <i class="bi bi-person-fill me-1"></i>Back Name: <strong>{{ item.back_name }}</strong>
-                </div>
-              {% endif %}
-            </div>
-            <button
-              type="button"
-              class="btn p-0 m-0 border-0 bg-transparent text-danger fs-5 align-self-start align-self-md-center"
-              hx-post="{% url 'order:delete-item' item.product_id item.size %}"
-              hx-target="closest li"
-              hx-swap="outerHTML swap:1s"
-            >
-              ×
-            </button>
-          </li>
-        {% empty %}
-          <li class="list-group-item">No items added yet.</li>
-        {% endfor %}
-      </ul>
-
-      <div class="mb-2 fw-bold">
-        <span>Total: $</span>{{ total_cost }}
-      </div>
-      <div class="mb-2">
-        <input type="text" name="customer_name" placeholder="Customer Name" class="form-control" required>
-      </div>
-      <div class="mb-2">
-        <input type="email" name="customer_email" placeholder="Email" class="form-control" required>
-      </div>
-      {% if requires_player_name %}
-        <div class="mb-2">
-          <input type="text" name="player_name" maxlength="200" placeholder="Player Name" class="form-control" required>
-          <div class="form-text">Applied to every item in this order.</div>
+        <div class="summary-total">
+          <span>Total</span>
+          <strong>${{ total_cost }}</strong>
         </div>
-      {% endif %}
+      </section>
+
+      <section class="product-modal__section">
+        <h6>Your details</h6>
+        <div class="row g-3">
+          <div class="col-12">
+            <input type="text" name="customer_name" placeholder="Your name" class="form-control" required>
+          </div>
+          <div class="col-12">
+            <input type="email" name="customer_email" placeholder="Your email" class="form-control" required>
+          </div>
+          {% if requires_player_name %}
+            <div class="col-12">
+              <input type="text" name="player_name" maxlength="200" placeholder="Player name" class="form-control" required>
+              <div class="form-text">Applied to every item in this order.</div>
+            </div>
+          {% endif %}
+        </div>
+      </section>
     {% else %}
-      <p>No items in your order yet.</p>
+      <section class="product-modal__section">
+        <h6>Your order is empty</h6>
+        <p class="mb-0">Add some products to get started.</p>
+      </section>
     {% endif %}
   </div>
 
-  <div class="modal-footer">
-    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+  <div class="modal-footer product-modal__footer">
+    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
     {% if order_items %}
-      <button type="submit" class="btn btn-success">Continue to checkout</button>
+      <button type="submit" class="btn btn-dark px-4">Continue to checkout</button>
     {% endif %}
   </div>
 </form>

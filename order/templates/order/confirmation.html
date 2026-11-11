@@ -2,39 +2,39 @@
 {% load static %}
 
 {% block content %}
-<div class="min-h-screen bg-stone-200 flex flex-col items-center justify-center p-6 space-y-8">
+<div class="min-h-screen bg-zinc-900 flex flex-col items-center justify-center p-6 space-y-8">
 
-  <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-stone-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+  <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
     <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
   </svg>
 
   <div class="text-center max-w-md">
-    <h1 class="text-3xl font-bold text-stone-800 mb-2">Order Confirmed!</h1>
-    <p class="text-gray-600 text-lg mb-4">
+    <h1 class="text-3xl font-bold text-zinc-100 mb-2">Order Confirmed!</h1>
+    <p class="text-zinc-400 text-lg mb-4">
       Thank you for your order. Please complete your payment using Venmo.
     </p>
-    <p class="text-gray-700 font-semibold text-xl mb-6">
-      Total: <span class="text-stone-900">${{ total_cost }}</span>
+    <p class="text-zinc-300 font-semibold text-xl mb-6">
+      Total: <span class="text-zinc-100">${{ total_cost }}</span>
     </p>
   </div>
 
   <div class="relative">
     <img src="{% static 'images/venmoQRCode.png' %}" alt="Venmo QR Code"
          class="mx-auto w-64 h-64 object-contain hover:scale-105 transition-transform duration-300">
-    <p class="text-gray-500 text-sm mt-2 text-center">Scan to pay with Venmo</p>
+    <p class="text-zinc-500 text-sm mt-2 text-center">Scan to pay with Venmo</p>
   </div>
 
   <a href="https://account.venmo.com/u/bigalsathletics" target="_blank"
-     class="w-full max-w-xs py-3 bg-stone-600 hover:bg-stone-700 text-white font-semibold rounded-xl text-center transition-colors">
+     class="w-full max-w-xs py-3 bg-zinc-700 hover:bg-zinc-600 text-white font-semibold rounded-xl text-center transition-colors">
     Open Venmo
   </a>
 
   <a href="{% url 'order:index' %}"
-     class="w-full max-w-xs py-3 bg-white border border-gray-300 hover:bg-gray-100 text-gray-800 font-semibold rounded-xl text-center transition-colors">
+     class="w-full max-w-xs py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold rounded-xl text-center transition-colors">
     Back to Shop
   </a>
 
-  <p class="text-gray-400 text-sm mt-4">We appreciate your business!</p>
+  <p class="text-zinc-500 text-sm mt-4">We appreciate your business!</p>
 
 </div>
 {% endblock %}
