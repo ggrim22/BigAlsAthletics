@@ -47,6 +47,12 @@
       <div class="mb-2">
         <input type="email" name="customer_email" placeholder="Email" class="form-control" required>
       </div>
+      {% if requires_player_name %}
+        <div class="mb-2">
+          <input type="text" name="player_name" maxlength="200" placeholder="Player Name" class="form-control" required>
+          <div class="form-text">Applied to every item in this order.</div>
+        </div>
+      {% endif %}
     {% else %}
       <p>No items in your order yet.</p>
     {% endif %}

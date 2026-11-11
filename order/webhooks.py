@@ -42,11 +42,13 @@ def stripe_webhook(request):
             for order_item in order.items.all():
                 size_display = dict(Size.choices).get(order_item.size, order_item.size) if order_item.size else 'N/A'
                 back_name_text = f" (Back: {order_item.back_name})" if order_item.back_name else ""
+                player_name_text = f"\n    Player: {order_item.player_name}" if order_item.player_name else ""
                 items_list.append(
                     f"  - {order_item.product_name} - {order_item.product_color or 'N/A'}\n"
                     f"    Size: {size_display}\n"
                     f"    Quantity: {order_item.quantity}\n"
                     f"    Price: ${order_item.product_cost} each{back_name_text}"
+                    f"{player_name_text}"
                 )
 
             logger.info("Created order %s from Stripe session %s", order.id, session['id'])

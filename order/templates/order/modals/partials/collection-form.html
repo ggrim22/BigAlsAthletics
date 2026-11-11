@@ -1,0 +1,46 @@
+{% load crispy_forms_tags %}
+
+<form hx-post="{{ request.path }}" class="modal-content product-modal choice-modal">
+  {% csrf_token %}
+  <div class="modal-header product-modal__header">
+    <div>
+      <p class="product-modal__eyebrow">Catalog</p>
+      <h5 class="modal-title">{{ title }}</h5>
+    </div>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+  </div>
+
+  <div class="modal-body product-modal__body">
+    {{ form.non_field_errors }}
+
+    <section class="product-modal__section">
+      <h6>Collection details</h6>
+      <div class="row g-3">
+        <div class="col-12">{{ form.name|as_crispy_field }}</div>
+      </div>
+    </section>
+
+    <section class="product-modal__section product-modal__options">
+      <h6>Options</h6>
+      {% if form.has_player_name.help_text %}
+        {# id matches the aria-describedby Django puts on the checkbox #}
+        <p id="{{ form.has_player_name.auto_id }}_helptext">{{ form.has_player_name.help_text }}</p>
+      {% endif %}
+      <div class="product-modal__toggle-list">
+        <div class="product-modal__toggle">
+          {{ form.has_player_name }}
+          <label for="{{ form.has_player_name.id_for_label }}">{{ form.has_player_name.label }}</label>
+        </div>
+        <div class="product-modal__toggle">
+          {{ form.active }}
+          <label for="{{ form.active.id_for_label }}">{{ form.active.label }}</label>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal-footer product-modal__footer">
+    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+    <button type="submit" class="btn btn-dark px-4">{{ submit_label }}</button>
+  </div>
+</form>

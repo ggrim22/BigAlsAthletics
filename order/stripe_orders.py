@@ -97,6 +97,7 @@ def create_order_from_checkout_session(session_id):
                 product_category=product_metadata.get("category", ""),
                 product_cost=unit_price,
                 back_name=product_metadata.get("back_name", ""),
+                player_name=product_metadata.get("player_name", ""),
             )
 
     return order, True

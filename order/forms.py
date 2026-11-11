@@ -86,12 +86,31 @@ class ProductForm(forms.ModelForm):
             "colors": "Customers choose from these colors when ordering.",
             "available_sizes": "These are the default sizes. A pricing rule can narrow them further.",
         }
+        widgets = {
+            # Same as CollectionForm: these two render as raw widgets in the
+            # modal, so .product-modal__toggle .form-check-input needs the class.
+            "has_back_name": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            "active": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        }
 
 
 class CollectionForm(forms.ModelForm):
     class Meta:
         model = Collection
         fields = '__all__'
+        labels = {
+            "name": "Collection name",
+            "has_player_name": "Require a player name",
+        }
+        help_texts = {
+            "has_player_name": "Customers enter one player name in the cart, applied to every item ordered from this collection.",
+        }
+        widgets = {
+            # The modal renders these as raw widgets, so the Bootstrap class has
+            # to come from here for .product-modal__toggle styling to apply.
+            "has_player_name": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            "active": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        }
 
 
 class CategoryForm(forms.ModelForm):

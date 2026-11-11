@@ -25,6 +25,9 @@
           <th class="px-4 py-3 text-left text-sm font-semibold">Email</th>
           <th class="px-4 py-3 text-left text-sm font-semibold">Date</th>
           <th class="px-4 py-3 text-left text-sm font-semibold">Items</th>
+          {% if has_player_names %}
+            <th class="px-4 py-3 text-left text-sm font-semibold">Player Name</th>
+          {% endif %}
           <th class="px-4 py-3 text-left text-sm font-semibold">Paid</th>
           <th class="px-4 py-3 text-center text-sm font-semibold">Action</th>
         </tr>
@@ -51,10 +54,21 @@
                 {{ item.quantity }} × {{ item.product_name }} -
                 {{ item.product_category }} ({{ item.size }})
                 {% if item.back_name %} – "{{ item.back_name }}"{% endif %}
+                {% if item.player_name %} <span class="text-stone-600">[Player: {{ item.player_name }}]</span>{% endif %}
               </li>
               {% endfor %}
             </ul>
           </td>
+
+          {% if has_player_names %}
+            <td class="px-4 py-3 text-sm">
+              {% for name in order.player_names %}
+                <span class="inline-block px-2 py-0.5 mr-1 mb-1 text-xs font-semibold bg-stone-100 text-stone-700 border border-stone-300 rounded">{{ name }}</span>
+              {% empty %}
+                <span class="text-gray-400">—</span>
+              {% endfor %}
+            </td>
+          {% endif %}
 
           <td class="px-4 py-3 text-center text-sm">
             <span class="inline-flex items-center">

@@ -3,6 +3,14 @@
 {% load crispy_forms_tags %}
 {% block content %}
 
+<style>
+  /* The Player Name column is hidden until the toggle below is checked.
+     Pure CSS, so it needs no JavaScript bundle, works on HTMX-appended
+     rows with no re-sync, and cannot break if a stale static file is served. */
+  .player-name-column { display: none; }
+  body:has(#playerNameToggle:checked) .player-name-column { display: table-cell; }
+</style>
+
 <div class="max-w-7xl mx-auto px-6 mt-12">
   <div class="flex justify-between items-center mb-4">
     <h3 class="text-2xl font-semibold">Order Dashboard</h3>
@@ -20,16 +28,29 @@
     </div>
   </div>
 
-  <!-- Edit Mode Toggle and Archived Orders Link -->
+  <!-- Table Toggles and Archived Orders Link -->
   <div class="mb-4 flex justify-between items-center">
-    <label class="flex items-center gap-3 cursor-pointer">
-      <input
-        type="checkbox"
-        id="editModeToggle"
-        class="w-5 h-5 accent-stone-600 cursor-pointer"
-      >
-      <span class="text-lg font-semibold text-gray-700">Edit Mode</span>
-    </label>
+    <div class="flex items-center gap-6">
+      <label class="flex items-center gap-3 cursor-pointer">
+        <input
+          type="checkbox"
+          id="editModeToggle"
+          class="w-5 h-5 accent-stone-600 cursor-pointer"
+        >
+        <span class="text-lg font-semibold text-gray-700">Edit Mode</span>
+      </label>
+
+      {% if has_player_names %}
+        <label class="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            id="playerNameToggle"
+            class="w-5 h-5 accent-stone-600 cursor-pointer"
+          >
+          <span class="text-lg font-semibold text-gray-700">Player Names</span>
+        </label>
+      {% endif %}
+    </div>
     <a href="{% url 'order:archived_orders' %}"
        class="px-4 py-2 bg-gray-100 border border-gray-300 text-gray-700 hover:bg-gray-200 rounded-lg transition">
       View Archived Orders

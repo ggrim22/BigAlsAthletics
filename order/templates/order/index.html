@@ -2,10 +2,12 @@
 {% load static %}
 {% load crispy_forms_tags %}
 
+{% block nav_class %}nav--overlay mx-12{% endblock %}
+
 {% block content %}
 <div class="relative min-h-screen flex items-center justify-center overflow-hidden">
-<div class="absolute inset-0 bg-cover bg-center bg-[url('{% static 'images/blackandwhite.jpeg' %}')]">
-  <div class="absolute inset-0 bg-gradient-to-br from-black/70 via-black/60 to-black/80"></div>
+<div class="absolute inset-0 bg-cover bg-center bg-[url('{% static 'images/hero-print-shop.jpg' %}')]">
+  <div class="absolute inset-0 bg-gradient-to-br from-black/50 via-black/40 to-black/70"></div>
   <div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,black,transparent)]"></div>
 </div>
 

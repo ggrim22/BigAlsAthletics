@@ -32,6 +32,21 @@ def is_admin(user):
     return user.is_superuser
 
 
+def orders_have_player_names(archived=False):
+    """Whether any order in this view carries a player name.
+
+    The dashboard only offers the Player Name toggle when there is something to
+    show, so collections that do not collect player names stay uncluttered.
+    """
+    return (
+        OrderItem.objects
+        .filter(order__archived=archived)
+        .exclude(player_name__isnull=True)
+        .exclude(player_name="")
+        .exists()
+    )
+
+
 def selected_variant(product, category_id=None, color_id=None):
     """Return the most specific pricing rule for a product selection.
 
@@ -261,13 +276,31 @@ def confirm_order(request):
     valid_items = []
     total_cost = Decimal("0.00")
 
+    # The player name is typed once in the cart and applied to every item from a
+    # collection that asks for one. Capped to the model's max_length so an
+    # oversized name cannot fail the order write that happens after payment.
+    submitted_player_name = request.POST.get("player_name", "").strip()[:200]
+    player_name_required = False
+
     for item in order_items:
-        product = Product.objects.filter(pk=item.get("product_id"), active=True, collection__active=True).first()
+        product = (
+            Product.objects
+            .select_related("collection")
+            .filter(pk=item.get("product_id"), active=True, collection__active=True)
+            .first()
+        )
         if not product:
             continue
 
         size = item.get("size")
         back_name = item.get("back_name")
+
+        if product.collection and product.collection.has_player_name:
+            player_name_required = True
+            player_name = submitted_player_name
+        else:
+            player_name = ""
+
         price = Decimal(item.get("price", "0.00"))
 
         if size in [Size.ADULT_2X, Size.ADULT_3X]:
@@ -287,11 +320,18 @@ def confirm_order(request):
             "category_id": item.get("category_id"),
             "price": str(price),
             "back_name": back_name,
+            "player_name": player_name,
         })
 
         total_cost += price * int(item.get("quantity", 1))
 
     if not valid_items:
+        return redirect("order:index")
+
+    # Backstop for the required input in the cart. The cart stays in the session
+    # so the customer only has to add the name they missed.
+    if player_name_required and not submitted_player_name:
+        messages.error(request, "Please enter a player name before checking out.")
         return redirect("order:index")
 
     customer_data = {
@@ -302,19 +342,23 @@ def confirm_order(request):
     line_items = []
     for item in valid_items:
         product = Product.objects.get(pk=item["product_id"])
+        description = f"Size: {item['size']}, Color: {item['color_name'] or ''}, Category: {item['category_name'] or ''}, Custom Name: {item['back_name'] or ''}"
+        if item.get("player_name"):
+            description += f", Player: {item['player_name']}"
         line_items.append({
             "price_data": {
                 "currency": "usd",
                 "product_data": {
                     "images": [request.build_absolute_uri(product.image.url)],
                     "name": item["product_name"],
-                    "description": f"Size: {item['size']}, Color: {item['color_name'] or ''}, Category: {item['category_name'] or ''}, Custom Name: {item['back_name'] or ''}",
+                    "description": description,
                     "metadata": {
                         "product_id": str(item["product_id"]),
                         "size": item['size'],
                         "color": item['color_name'] or '',
                         "category": item['category_name'] or '',
                         "back_name": item['back_name'] or '',
+                        "player_name": item.get('player_name') or '',
                     }
                 },
                 "unit_amount": int(Decimal(item["price"]) * 100),
@@ -404,12 +448,16 @@ def view_summary(request):
 
     total_cost = Decimal("0.00")
     cleaned_items = []
+    requires_player_name = False
 
     for item in order_items:
         try:
-            product = Product.objects.get(id=item["product_id"])
+            product = Product.objects.select_related("collection").get(id=item["product_id"])
         except Product.DoesNotExist:
             continue
+
+        if product.collection and product.collection.has_player_name:
+            requires_player_name = True
 
         price = Decimal(item.get("price", "0.00"))
 
@@ -441,6 +489,7 @@ def view_summary(request):
         "order_items": cleaned_items,
         "collections": collections,
         "total_cost": total_cost,
+        "requires_player_name": requires_player_name,
     })
 
 
@@ -454,10 +503,14 @@ def shopping_cart(request):
         from .models import Collection
         collection = Collection.objects.filter(pk=collection_id).first()
 
+    requires_player_name = False
     enriched_items = []
     for item in order_items:
         try:
-            product = Product.objects.get(id=item["product_id"])
+            product = Product.objects.select_related("collection").get(id=item["product_id"])
+            if product.collection and product.collection.has_player_name:
+                requires_player_name = True
+
             price = Decimal(item.get("price", "0.00"))
 
             # Apply size upcharges
@@ -486,6 +539,7 @@ def shopping_cart(request):
         "order_items": enriched_items,
         "collection": collection,
         "total_cost": total_cost,
+        "requires_player_name": requires_player_name,
     }
     return render(request, "order/partials/_shopping-cart.html", context)
 
@@ -586,7 +640,9 @@ def toggle_paid(request, order_id):
 @user_passes_test(is_admin)
 @login_required
 def order_dashboard(request):
-    return render(request, "order/order-dashboard.html")
+    return render(request, "order/order-dashboard.html", {
+        "has_player_names": orders_have_player_names(),
+    })
 
 
 @user_passes_test(is_admin)
@@ -719,13 +775,14 @@ def order_download(request):
         items_summary = []
         for item in order.items.all():
             items_summary.append(
-                f"{item.product_name} - {item.product_color} {item.product_category} ({item.size}){f' – {item.back_name}' if item.back_name else ''} x {item.quantity}, "
+                f"{item.product_name} - {item.product_color} {item.product_category} ({item.size}){f' – {item.back_name}' if item.back_name else ''}{f' [Player: {item.player_name}]' if item.player_name else ''} x {item.quantity}, "
             )
 
         rows.append({
             "Customer Name": order.customer_name,
             "Customer Email": order.customer_email,
             "Venmo": order.customer_venmo,
+            "Player Names": ", ".join(order.player_names),
             "Items": "\n".join(items_summary),
         })
 
@@ -942,7 +999,12 @@ def archived_orders(request):
     """View archived orders"""
     orders = Order.objects.filter(archived=True).prefetch_related("items__product").order_by("-created_at")
     total = orders.count()
-    context = {'orders': orders, 'is_archived_view': True, 'total_orders': total}
+    context = {
+        'orders': orders,
+        'is_archived_view': True,
+        'total_orders': total,
+        'has_player_names': orders_have_player_names(archived=True),
+    }
     return render(request, "order/order-archive.html", context)
 
 

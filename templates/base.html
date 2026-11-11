@@ -29,7 +29,7 @@
     {% block head %}{% endblock %}
 </head>
 <body class="bg-stone-200">
-  <nav class="mx-12 relative">
+  <nav class="{% block nav_class %}mx-12 relative{% endblock %}">
     <div class="flex justify-between items-center">
       <div>
         <a href="{% url 'order:index' %}">
@@ -186,6 +186,49 @@
     .nav-link:hover::after {
       width: 80%;
     }
+
+    /* Overlay nav: sits on top of a full-bleed hero instead of taking up its
+       own band, so the image reaches the top of the screen. Pages opt in by
+       overriding the nav_class block. */
+    .nav--overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 30;
+    }
+
+    /* Beats the Tailwind text-* utilities on the links and buttons. */
+    .nav--overlay a,
+    .nav--overlay button {
+      color: #fff;
+    }
+
+    .nav--overlay a:hover,
+    .nav--overlay button:hover {
+      color: #d6d3d1;
+    }
+
+    .nav--overlay .nav-link::after {
+      background: #fff;
+    }
+
+    /* The logo is black line art on transparency, so it would vanish against
+       a dark hero. This repaints it white without needing a second asset. */
+    .nav--overlay #logo {
+      filter: brightness(0) invert(1);
+    }
+
+    /* The mobile dropdown is its own white panel, so its links stay dark. */
+    .nav--overlay #mobile-menu a,
+    .nav--overlay #mobile-menu button {
+      color: #1c1917;
+    }
+
+    .nav--overlay #mobile-menu a:hover,
+    .nav--overlay #mobile-menu button:hover {
+      color: #000;
+    }
   </style>
 
   <script>
@@ -278,6 +321,21 @@
                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-stone-600 focus:border-transparent"
                  required>
 
+          <!-- Shown by togglePlayerNameField (below) only when the cart holds
+               items from a collection that collects a player name. -->
+          <div id="player-name-field" class="hidden">
+            <input type="text"
+                   id="checkout-player-name"
+                   name="player_name"
+                   maxlength="200"
+                   placeholder="Player Name"
+                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-stone-600 focus:border-transparent"
+                   disabled>
+            <p class="text-xs text-gray-500 mt-1.5">
+              Applied to every item in this order.
+            </p>
+          </div>
+
           <div class="flex items-center justify-between text-lg font-bold pt-2 border-t border-gray-300">
             <span class="text-gray-700">Total:</span>
             <span id="cart-total" class="text-2xl text-stone-600">$0.00</span>
@@ -292,6 +350,26 @@
         </form>
       </div>
     </div>
+
+    <script nonce="{{ request.csp_nonce }}">
+      // Defined here rather than in a static JS file so a stale collected
+      // bundle can never leave the cart unable to ask for a player name.
+      function togglePlayerNameField(required) {
+        const wrapper = document.getElementById('player-name-field');
+        const input = document.getElementById('checkout-player-name');
+        if (!wrapper || !input) return;
+
+        wrapper.classList.toggle('hidden', !required);
+
+        // A hidden `required` input blocks submission without being focusable,
+        // and a disabled input is never submitted, so both flags move together.
+        input.required = required;
+        input.disabled = !required;
+        if (!required) {
+          input.value = '';
+        }
+      }
+    </script>
 
     <script src="{% static 'js/mobile-menu.js' %}" nonce="{{ request.csp_nonce }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>

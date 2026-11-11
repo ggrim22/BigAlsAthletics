@@ -89,6 +89,16 @@ def inactive_collection(db):
 
 
 @pytest.fixture
+def player_name_collection(db):
+    """Creates a collection that requires a player name on every item"""
+    return Collection.objects.create(
+        name='Varsity Roster 2024',
+        has_player_name=True,
+        active=True
+    )
+
+
+@pytest.fixture
 def product(db, collection, product_category, product_color):
     """Creates a test product with image"""
     from django.core.files.uploadedfile import SimpleUploadedFile
@@ -124,6 +134,38 @@ def product_variant(db, product, product_category, product_color):
         price=Decimal('25.00'),
         available_sizes=[Size.ADULT_M, Size.ADULT_L, Size.ADULT_XL]
     )
+
+
+@pytest.fixture
+def player_name_product(db, player_name_collection, product_category, product_color):
+    """Creates a product that belongs to a player-name collection"""
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    from PIL import Image
+    from io import BytesIO
+
+    img = Image.new('RGB', (344, 250), color='green')
+    img_io = BytesIO()
+    img.save(img_io, format='JPEG')
+    img_io.seek(0)
+
+    product = Product.objects.create(
+        name='Roster Jersey',
+        collection=player_name_collection,
+        image=SimpleUploadedFile('roster.jpg', img_io.read(), content_type='image/jpeg'),
+        available_sizes=[Size.ADULT_M, Size.ADULT_L],
+        has_back_name=True,
+        active=True
+    )
+    product.category.add(product_category)
+    product.colors.add(product_color)
+    ProductVariant.objects.create(
+        product=product,
+        category=product_category,
+        color=product_color,
+        price=Decimal('40.00'),
+        available_sizes=[Size.ADULT_M, Size.ADULT_L]
+    )
+    return product
 
 
 @pytest.fixture

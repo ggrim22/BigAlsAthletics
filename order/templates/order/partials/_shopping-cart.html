@@ -84,6 +84,7 @@
   <script nonce="{{ request.csp_nonce }}">
     // Update cart UI with current data
     updateCartUI({{ order_items|length }}, {{ total_cost|default:0 }});
+    togglePlayerNameField({{ requires_player_name|yesno:"true,false" }});
   </script>
 
 {% else %}
@@ -105,5 +106,6 @@
   <script nonce="{{ request.csp_nonce }}">
     // Update cart UI for empty state
     updateCartUI(0, 0);
+    togglePlayerNameField(false);
   </script>
 {% endif %}
