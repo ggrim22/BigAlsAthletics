@@ -296,8 +296,8 @@ a:hover > #logo { opacity: 1; }
 }
 
 .product-modal__footer .btn { border: 0; border-radius: .45rem; font-weight: 600; }
-.product-modal__footer .btn-light { color: #e4e4e7; background: #3f3f46; }
-.product-modal__footer .btn-light:hover { color: #fff; background: #52525b; }
+.product-modal__footer .btn-light { color: #f4f4f5; background: #52525b; }
+.product-modal__footer .btn-light:hover { color: #fff; background: #63636d; }
 .product-modal__footer .btn-dark {
   color: #18181b;
   background: #e4e4e7;

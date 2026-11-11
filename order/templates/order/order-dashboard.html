@@ -16,12 +16,12 @@
     <h3 class="text-2xl font-semibold">Order Dashboard</h3>
     <div class="flex gap-3">
       <a href="{% url 'order:order_download' %}"
-        class="px-4 py-2 bg-zinc-800 text-zinc-100
+        class="px-4 py-2 bg-zinc-700 text-white
                hover:bg-zinc-600 rounded-lg transition cursor-pointer">
         Download
       </a>
       <a href="{% url 'order:summary' %}"
-        class="px-4 py-2 bg-zinc-800 text-zinc-100
+        class="px-4 py-2 bg-zinc-700 text-white
                hover:bg-zinc-600 rounded-lg transition cursor-pointer">
         See Details
       </a>
@@ -52,7 +52,7 @@
       {% endif %}
     </div>
     <a href="{% url 'order:archived_orders' %}"
-       class="px-4 py-2 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white rounded-lg transition">
+       class="px-4 py-2 bg-zinc-700 text-zinc-100 hover:bg-zinc-600 hover:text-white rounded-lg transition">
       View Archived Orders
     </a>
   </div>
