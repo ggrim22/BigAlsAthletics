@@ -227,11 +227,23 @@ if DEBUG:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 else:
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-    EMAIL_HOST = "smtp.sendgrid.net"
-    EMAIL_PORT = 587
+    # DMARC note: the From domain must match whoever actually sends the mail.
+    # A @gmail.com From address sent through SendGrid fails alignment and gets
+    # deferred by Gmail and dropped by carrier SMS gateways. Either send through
+    # Google (below) or move DEFAULT_FROM_EMAIL to a domain authenticated in
+    # SendGrid.
+    #
+    # To send through Gmail:
+    #   EMAIL_HOST=smtp.gmail.com
+    #   EMAIL_HOST_USER=orders.bigalsathletics@gmail.com
+    #   EMAIL_HOST_PASSWORD=<16-character Google app password>
+    EMAIL_HOST = config("EMAIL_HOST", default="smtp.sendgrid.net")
+    EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
     EMAIL_USE_TLS = True
-    EMAIL_HOST_USER = "apikey"
-    EMAIL_HOST_PASSWORD = config("SENDGRID_API_KEY", default="")
+    EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="apikey")
+    EMAIL_HOST_PASSWORD = config(
+        "EMAIL_HOST_PASSWORD", default=config("SENDGRID_API_KEY", default="")
+    )
 
 # ============================================================
 # ALERTS

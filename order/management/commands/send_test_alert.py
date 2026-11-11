@@ -8,6 +8,7 @@ Locally DEBUG=True routes mail to the console backend, so --real is what
 actually puts a text on your phone from a dev machine.
 """
 
+from decouple import config
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.test.utils import override_settings
@@ -24,10 +25,50 @@ class Command(BaseCommand):
             action="store_true",
             help="Force the SMTP backend even when DEBUG routes mail to the console.",
         )
+        parser.add_argument(
+            "--sms",
+            default=None,
+            help=(
+                "Comma-separated gateway addresses to text instead of ALERT_SMS. "
+                "Use this to find out which carrier a number is on by trying "
+                "several gateways at once."
+            ),
+        )
+        parser.add_argument(
+            "--number",
+            default=None,
+            help=(
+                "A 10-digit number to try against every known carrier gateway. "
+                "Whichever one arrives is the carrier."
+            ),
+        )
+
+    # Gateways to probe with --number.
+    CARRIER_GATEWAYS = {
+        "Verizon (SMS)": "vtext.com",
+        "Verizon (MMS)": "vzwpix.com",
+        "AT&T (SMS)": "txt.att.net",
+        "AT&T (MMS)": "mms.att.net",
+        "T-Mobile": "tmomail.net",
+        "Google Fi": "msg.fi.google.com",
+    }
 
     def handle(self, *args, **options):
         emails = settings.ALERT_EMAIL_RECIPIENTS
         sms = settings.ALERT_SMS_RECIPIENTS
+
+        number = (options.get("number") or "").strip()
+        if number:
+            digits = "".join(c for c in number if c.isdigit())[-10:]
+            sms = [f"{digits}@{domain}" for domain in self.CARRIER_GATEWAYS.values()]
+            self.stdout.write("Probing every carrier gateway:")
+            for label, domain in self.CARRIER_GATEWAYS.items():
+                self.stdout.write(f"  {label:<16} {digits}@{domain}")
+            self.stdout.write(self.style.WARNING(
+                "Only the matching carrier will deliver; the rest bounce harmlessly."
+            ))
+        elif options.get("sms"):
+            sms = [a.strip() for a in options["sms"].split(",") if a.strip()]
 
         self.stdout.write(f"Email recipients: {emails or '(none configured)'}")
         self.stdout.write(f"SMS recipients:   {sms or '(none configured)'}")
@@ -40,23 +81,29 @@ class Command(BaseCommand):
 
         summary = "Big Al's test alert - if you got this, alerts work."
 
+        overrides = {"ALERT_SMS_RECIPIENTS": sms}
+
         if options["real"]:
             if not settings.EMAIL_HOST_PASSWORD:
                 self.stdout.write(self.style.ERROR(
                     "SENDGRID_API_KEY is empty; real send would fail."
                 ))
                 return
-            self.stdout.write("Forcing SMTP backend...")
+            host = config("EMAIL_HOST", default="smtp.sendgrid.net")
+            self.stdout.write(f"Forcing SMTP backend via {host}...")
+            self.stdout.write(f"From: {settings.DEFAULT_FROM_EMAIL}")
             with override_settings(
                 EMAIL_BACKEND="django.core.mail.backends.smtp.EmailBackend",
-                EMAIL_HOST="smtp.sendgrid.net",
-                EMAIL_PORT=587,
+                EMAIL_HOST=host,
+                EMAIL_PORT=config("EMAIL_PORT", default=587, cast=int),
                 EMAIL_USE_TLS=True,
-                EMAIL_HOST_USER="apikey",
+                EMAIL_HOST_USER=config("EMAIL_HOST_USER", default="apikey"),
+                **overrides,
             ):
                 delivered = send_alert(summary=summary, detail=summary, urgent=True)
         else:
-            delivered = send_alert(summary=summary, detail=summary, urgent=True)
+            with override_settings(**overrides):
+                delivered = send_alert(summary=summary, detail=summary, urgent=True)
 
         if delivered:
             self.stdout.write(self.style.SUCCESS("Alert handed to the mail backend."))
