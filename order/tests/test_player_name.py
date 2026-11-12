@@ -707,25 +707,33 @@ class TestPlayerNameColumnOnOrderTable:
     def test_archived_orders_show_player_name_column(
         self, authenticated_client, player_name_product
     ):
+        """The archive table is loaded by the list endpoint, not the page shell."""
         self._order_with_player_name(player_name_product, archived=True)
 
-        response = authenticated_client.get(reverse('order:archived_orders'))
+        response = authenticated_client.get(reverse('order:archived_order_list'))
         content = response.content.decode()
 
         assert response.status_code == 200
-        assert re.search(r'<th[^>]*>\s*Player Name\s*</th>', content)
+        assert re.search(r'<th[^>]*player-name-column', content)
         assert 'Jordan Reyes' in content
 
-    def test_archived_orders_hide_column_without_names(self, authenticated_client, order):
+    def test_archived_page_offers_the_toggle_when_names_exist(
+        self, authenticated_client, player_name_product
+    ):
+        self._order_with_player_name(player_name_product, archived=True)
+
+        content = authenticated_client.get(reverse('order:archived_orders')).content.decode()
+
+        assert re.search(r'<input[^>]*id="playerNameToggle"', content)
+
+    def test_archived_page_hides_the_toggle_without_names(self, authenticated_client, order):
+        """Same rule as the active dashboard: no toggle when nothing to reveal."""
         order.archived = True
         order.save()
 
-        response = authenticated_client.get(reverse('order:archived_orders'))
-        content = response.content.decode()
+        content = authenticated_client.get(reverse('order:archived_orders')).content.decode()
 
-        assert response.status_code == 200
-        # Scoped to the table header: the cart's own field lives on every page.
-        assert not re.search(r'<th[^>]*>\s*Player Name\s*</th>', content)
+        assert not re.search(r'<input[^>]*id="playerNameToggle"', content)
 
     def test_order_download_succeeds_with_player_names(
         self, authenticated_client, player_name_product

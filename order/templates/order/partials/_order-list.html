@@ -1,13 +1,22 @@
+{% if not is_archived %}
 <script nonce="{{ request.csp_nonce }}">
     window.bulkDeleteUrl = "{% url 'order:bulk_delete_orders' %}";
     window.bulkArchiveUrl = "{% url 'order:bulk_archive_orders' %}";
 </script>
+{% endif %}
 
 <div id="order-list-container">
+    {% if search_query %}
+    <div class="mb-3 text-sm text-zinc-500">
+        {{ total_orders }} match{{ total_orders|pluralize:"es" }} for “{{ search_query }}”
+    </div>
+    {% endif %}
+
     <div class="overflow-x-auto rounded-lg">
         <table class="min-w-full">
             <thead class="bg-zinc-700 text-white">
                 <tr>
+                    {% if not is_archived %}
                     <th class="edit-mode-column px-4 py-3 text-left text-sm font-semibold" style="width: 50px; display: none;">
                         <input
                             type="checkbox"
@@ -16,12 +25,16 @@
                             aria-label="Select all orders"
                         >
                     </th>
+                    {% endif %}
                     <th class="px-4 py-3 text-left text-sm font-semibold">Name</th>
                     <th class="px-4 py-3 text-left text-sm font-semibold">Email</th>
                     <th class="px-4 py-3 text-left text-sm font-semibold">Date</th>
                     <th class="px-4 py-3 text-left text-sm font-semibold">Items</th>
                     <th class="player-name-column px-4 py-3 text-left text-sm font-semibold">Player Name</th>
                     <th class="px-4 py-3 text-left text-sm font-semibold">Paid</th>
+                    {% if is_archived %}
+                    <th class="px-4 py-3 text-center text-sm font-semibold">Action</th>
+                    {% endif %}
                 </tr>
             </thead>
             <tbody class="bg-zinc-800" id="orders-tbody">
@@ -30,12 +43,13 @@
         </table>
     </div>
 
+    {% if not is_archived %}
     <div id="bulkActionButtons"
          class="fixed bottom-8 right-8 flex gap-3 z-50"
          style="display: none;">
 
         <button id="bulkArchiveBtn"
-                class="px-6 py-3 bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700 transition flex items-center gap-2 font-semibold">
+                class="px-6 py-3 bg-zinc-700 text-zinc-100 rounded-lg shadow-lg hover:bg-zinc-600 hover:text-white transition flex items-center gap-2 font-semibold">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
             </svg>
@@ -43,13 +57,14 @@
         </button>
 
         <button id="bulkDeleteBtn"
-                class="px-6 py-3 bg-red-600 text-white rounded-lg shadow-lg hover:bg-red-700 transition flex items-center gap-2 font-semibold">
+                class="px-6 py-3 bg-red-900 text-red-50 rounded-lg shadow-lg hover:bg-red-800 transition flex items-center gap-2 font-semibold">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
             Delete (<span class="selected-count">0</span>)
         </button>
     </div>
+    {% endif %}
 </div>
 
 <style>

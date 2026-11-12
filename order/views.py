@@ -617,24 +617,72 @@ def product_dashboard(request):
     return render(request, "order/product-dashboard.html", context)
 
 
+ORDERS_PER_PAGE = 20
+
+
+def search_orders(queryset, query):
+    """Match a free-text query against the customer and anything in the items.
+
+    Joining items can return an order once per matching item, so the result is
+    de-duplicated.
+    """
+    if not query:
+        return queryset
+
+    return queryset.filter(
+        Q(customer_name__icontains=query)
+        | Q(customer_email__icontains=query)
+        | Q(customer_venmo__icontains=query)
+        | Q(items__product_name__icontains=query)
+        | Q(items__product_color__icontains=query)
+        | Q(items__product_category__icontains=query)
+        | Q(items__collection_name__icontains=query)
+        | Q(items__back_name__icontains=query)
+        | Q(items__player_name__icontains=query)
+    ).distinct()
+
+
 @user_passes_test(is_admin)
 @login_required
-def order_list(request):
-    page = request.GET.get('page', 1)
-    orders_per_page = 20
+def order_list(request, archived=False):
+    """Rows for the active or archived order table.
 
-    all_orders = Order.objects.filter(archived=False).prefetch_related("items__product").order_by("-created_at")
+    Serves the whole table on the first page and rows alone for later pages, so
+    the infinite scroll can append. The search term rides along on every
+    paginated request to keep the two in step.
+    """
+    try:
+        page_number = int(request.GET.get('page', 1))
+    except (TypeError, ValueError):
+        page_number = 1
 
-    paginator = Paginator(all_orders, orders_per_page)
-    orders = paginator.get_page(page)
+    query = request.GET.get('q', '').strip()
+
+    orders_qs = (
+        Order.objects
+        .filter(archived=archived)
+        .prefetch_related("items__product")
+        .order_by("-created_at")
+    )
+    orders_qs = search_orders(orders_qs, query)
+
+    paginator = Paginator(orders_qs, ORDERS_PER_PAGE)
+    orders = paginator.get_page(page_number)
 
     context = {
         'orders': orders,
         'has_next': orders.has_next(),
         'next_page': orders.next_page_number() if orders.has_next() else None,
+        'is_archived': archived,
+        'search_query': query,
+        'total_orders': paginator.count,
+        'has_player_names': orders_have_player_names(archived=archived),
+        'list_url': reverse(
+            'order:archived_order_list' if archived else 'order:order_list'
+        ),
     }
 
-    if request.headers.get('HX-Request') and int(page) > 1:
+    if request.headers.get('HX-Request') and page_number > 1:
         return render(request, "order/partials/_order-rows.html", context)
 
     return render(request, "order/partials/_order-list.html", context)
@@ -653,6 +701,7 @@ def toggle_paid(request, order_id):
 def order_dashboard(request):
     return render(request, "order/order-dashboard.html", {
         "has_player_names": orders_have_player_names(),
+        "total_orders": Order.objects.filter(archived=False).count(),
     })
 
 
@@ -778,6 +827,8 @@ def collection_list(request):
     context = {'collections': collections}
     return render(request, "order/partials/_collections-list.html", context)
 
+@user_passes_test(is_admin)
+@login_required
 def order_download(request):
     orders = Order.objects.filter(archived=False).prefetch_related("items")
 
@@ -1007,13 +1058,10 @@ def bulk_archive_orders(request):
 @user_passes_test(is_admin)
 @login_required
 def archived_orders(request):
-    """View archived orders"""
-    orders = Order.objects.filter(archived=True).prefetch_related("items__product").order_by("-created_at")
-    total = orders.count()
+    """Page shell for archived orders; the table itself is loaded by order_list."""
     context = {
-        'orders': orders,
         'is_archived_view': True,
-        'total_orders': total,
+        'total_orders': Order.objects.filter(archived=True).count(),
         'has_player_names': orders_have_player_names(archived=True),
     }
     return render(request, "order/order-archive.html", context)

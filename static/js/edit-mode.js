@@ -19,29 +19,29 @@ class OrderEditMode {
         // Create delete confirmation modal
         const deleteModal = document.createElement('div');
         deleteModal.id = 'deleteConfirmModal';
-        deleteModal.className = 'fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-[100]';
+        deleteModal.className = 'fixed inset-0 bg-black/70 hidden items-center justify-center z-[100]';
         deleteModal.innerHTML = `
-            <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 transform transition-all">
+            <div class="bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl max-w-md w-full mx-4 transform transition-all">
                 <div class="p-6">
                     <div class="flex items-center gap-4 mb-4">
-                        <div class="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
-                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="flex-shrink-0 w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center">
+                            <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                         </div>
                         <div>
-                            <h3 class="text-lg font-semibold text-gray-900">Delete Orders</h3>
-                            <p class="text-sm text-gray-500 mt-1">This action cannot be undone</p>
+                            <h3 class="text-lg font-semibold text-zinc-100">Delete Orders</h3>
+                            <p class="text-sm text-zinc-400 mt-1">This action cannot be undone</p>
                         </div>
                     </div>
-                    <p class="text-gray-700 mb-6">
+                    <p class="text-zinc-300 mb-6">
                         Are you sure you want to delete <span class="font-semibold delete-count">0</span> order(s)?
                     </p>
                     <div class="flex gap-3 justify-end">
-                        <button id="cancelDelete" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-medium">
+                        <button id="cancelDelete" class="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg hover:bg-zinc-700 hover:text-white transition font-medium">
                             Cancel
                         </button>
-                        <button id="confirmDelete" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium">
+                        <button id="confirmDelete" class="px-4 py-2 bg-red-900 text-red-50 rounded-lg hover:bg-red-800 transition font-medium">
                             Delete Orders
                         </button>
                     </div>
@@ -53,29 +53,29 @@ class OrderEditMode {
         // Create archive confirmation modal
         const archiveModal = document.createElement('div');
         archiveModal.id = 'archiveConfirmModal';
-        archiveModal.className = 'fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-[100]';
+        archiveModal.className = 'fixed inset-0 bg-black/70 hidden items-center justify-center z-[100]';
         archiveModal.innerHTML = `
-            <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 transform transition-all">
+            <div class="bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl max-w-md w-full mx-4 transform transition-all">
                 <div class="p-6">
                     <div class="flex items-center gap-4 mb-4">
-                        <div class="flex-shrink-0 w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="flex-shrink-0 w-12 h-12 rounded-xl bg-zinc-800 flex items-center justify-center">
+                            <svg class="w-6 h-6 text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
                             </svg>
                         </div>
                         <div>
-                            <h3 class="text-lg font-semibold text-gray-900">Archive Orders</h3>
-                            <p class="text-sm text-gray-500 mt-1">Orders can be restored later</p>
+                            <h3 class="text-lg font-semibold text-zinc-100">Archive Orders</h3>
+                            <p class="text-sm text-zinc-400 mt-1">Orders can be restored later</p>
                         </div>
                     </div>
-                    <p class="text-gray-700 mb-6">
+                    <p class="text-zinc-300 mb-6">
                         Are you sure you want to archive <span class="font-semibold archive-count">0</span> order(s)?
                     </p>
                     <div class="flex gap-3 justify-end">
-                        <button id="cancelArchive" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-medium">
+                        <button id="cancelArchive" class="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg hover:bg-zinc-700 hover:text-white transition font-medium">
                             Cancel
                         </button>
-                        <button id="confirmArchive" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+                        <button id="confirmArchive" class="px-4 py-2 bg-zinc-100 text-zinc-900 rounded-lg hover:bg-white transition font-medium">
                             Archive Orders
                         </button>
                     </div>

@@ -195,6 +195,7 @@ a:hover > #logo { opacity: 1; }
 .product-modal #div_id_category .form-check,
 .product-modal #div_id_colors .form-check,
 .product-modal #div_id_available_sizes .form-check {
+  position: relative;
   display: flex;
   align-items: center;
   gap: .55rem;
@@ -222,6 +223,15 @@ a:hover > #logo { opacity: 1; }
   cursor: pointer;
   background: transparent;
   transition: color .15s ease;
+}
+
+.product-modal #div_id_category .form-check-label::before,
+.product-modal #div_id_colors .form-check-label::before,
+.product-modal #div_id_available_sizes .form-check-label::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
 }
 
 .product-modal #div_id_category .form-check:hover,
@@ -265,6 +275,7 @@ a:hover > #logo { opacity: 1; }
 .product-modal__toggle-list { display: grid; gap: .55rem; }
 
 .product-modal__toggle {
+  position: relative;
   display: flex;
   align-items: center;
   gap: .65rem;
@@ -287,6 +298,18 @@ a:hover > #logo { opacity: 1; }
   color: #e4e4e7;
   font-weight: 600;
   cursor: pointer;
+}
+
+.product-modal__toggle label::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+}
+
+.product-modal__toggle:hover {
+  border-color: #52525b;
+  background: #27272a;
 }
 
 .product-modal__footer {

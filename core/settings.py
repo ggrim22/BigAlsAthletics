@@ -208,23 +208,55 @@ LOGOUT_REDIRECT_URL = "order:index"
 # CONTENT SECURITY POLICY
 # ============================================================
 
-CSP_DEFAULT_SRC = ("'self'",)
-CSP_SCRIPT_SRC = ("'self'",)
-CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
-CSP_FONT_SRC = ("'self'",)
+# django-csp 4.x reads this dict. The old CSP_* module settings it replaced are
+# silently ignored, which is why no policy was being sent at all.
+#
+# script-src carries 'unsafe-inline' deliberately: the templates use inline
+# onclick handlers (cart toggle, expanders), and those are NOT covered by a
+# nonce -- browsers also ignore 'unsafe-inline' entirely when a nonce is
+# present, so adding one here would break them. Removing those handlers is the
+# prerequisite for tightening this to nonce-based script-src.
+
+from csp.constants import NONE, SELF, UNSAFE_INLINE
+
+_CDN_SCRIPTS = [
+    "https://cdn.jsdelivr.net",      # bootstrap bundle, echarts
+    "https://cdn.tailwindcss.com",   # tailwind play CDN
+    "https://cdnjs.cloudflare.com",  # font-awesome
+]
+_CDN_STYLES = [
+    "https://cdn.jsdelivr.net",      # bootstrap, bootstrap-icons
+    "https://cdnjs.cloudflare.com",  # font-awesome
+]
 
 if DEBUG:
-    CSP_IMG_SRC = ("'self'", "data:", "http://localhost:8000")
+    _IMG_SRC = [SELF, "data:", "http://localhost:8000"]
 else:
-    CSP_IMG_SRC = (
-        "'self'",
+    _IMG_SRC = [
+        SELF,
         "data:",
         f"https://{AWS_S3_CUSTOM_DOMAIN}",
         "https://*.amazonaws.com",
-    )
+    ]
 
-CSP_CONNECT_SRC = ("'self'",)
-CSP_FRAME_SRC = ("'self'",)
+CONTENT_SECURITY_POLICY = {
+    "DIRECTIVES": {
+        "default-src": [SELF],
+        "script-src": [SELF, UNSAFE_INLINE] + _CDN_SCRIPTS,
+        # Tailwind's CDN injects <style> at runtime, so inline styles are required.
+        "style-src": [SELF, UNSAFE_INLINE] + _CDN_STYLES,
+        "font-src": [SELF, "data:"] + _CDN_STYLES,
+        "img-src": _IMG_SRC,
+        "connect-src": [SELF],
+        "frame-src": [SELF],
+        # Checkout posts to this app, which then redirects the browser to Stripe.
+        "form-action": [SELF, "https://checkout.stripe.com"],
+        # Defence in depth that costs nothing here:
+        "frame-ancestors": [NONE],   # matches X_FRAME_OPTIONS = DENY
+        "base-uri": [SELF],          # blocks <base> tag hijacking
+        "object-src": [NONE],        # no flash/applets, a classic XSS vector
+    },
+}
 
 # ============================================================
 # EMAIL

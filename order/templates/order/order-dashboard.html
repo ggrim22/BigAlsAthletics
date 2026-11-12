@@ -9,11 +9,19 @@
      rows with no re-sync, and cannot break if a stale static file is served. */
   .player-name-column { display: none; }
   body:has(#playerNameToggle:checked) .player-name-column { display: table-cell; }
+
+  /* htmx indicator: visible only while a request is in flight. */
+  .htmx-indicator { opacity: 0; transition: opacity .15s ease; }
+  .htmx-request .htmx-indicator,
+  .htmx-request.htmx-indicator { opacity: 1; }
 </style>
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 sm:mt-12">
   <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
-    <h3 class="text-2xl font-semibold">Order Dashboard</h3>
+    <h3 class="text-2xl font-semibold">
+      Order Dashboard
+      <span class="ml-2 align-middle text-base font-normal text-zinc-500">{{ total_orders }} order{{ total_orders|pluralize }}</span>
+    </h3>
     <div class="flex gap-3">
       <a href="{% url 'order:order_download' %}"
         class="px-4 py-2 bg-zinc-700 text-white
@@ -28,9 +36,28 @@
     </div>
   </div>
 
-  <!-- Table Toggles and Archived Orders Link -->
+  <!-- Search, table toggles, and the archived-orders link, all on one row -->
   <div class="mb-4 flex flex-wrap justify-between items-center gap-3">
-    <div class="flex items-center gap-6">
+    <div class="flex flex-wrap items-center gap-4 sm:gap-6">
+      <div class="relative w-full sm:w-72">
+        <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500"
+             fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/>
+        </svg>
+        <input type="search"
+               id="order-search"
+               name="q"
+               placeholder="Search name, email, or items..."
+               autocomplete="off"
+               class="w-full pl-10 pr-8 py-2 text-sm bg-zinc-800 text-zinc-100 placeholder-zinc-500 border border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-600 focus:border-transparent transition-shadow"
+               hx-get="{% url 'order:order_list' %}"
+               hx-trigger="input changed delay:300ms, search"
+               hx-target="#orders-panel"
+               hx-swap="innerHTML">
+        <span id="search-spinner"
+              class="htmx-indicator absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full border-b-2 border-zinc-400 animate-spin"></span>
+      </div>
+
       <label class="flex items-center gap-3 cursor-pointer">
         <input
           type="checkbox"
@@ -57,8 +84,13 @@
     </a>
   </div>
 
-  <div hx-trigger="load, order-items-updated from:body"
-       hx-get="{% url 'order:order_list' %}">
+
+  <!-- hx-include keeps the current search term on reloads triggered by
+       archiving or deleting, so the list does not silently reset. -->
+  <div id="orders-panel"
+       hx-trigger="load, order-items-updated from:body"
+       hx-get="{% url 'order:order_list' %}"
+       hx-include="#order-search">
   </div>
 
 </div>

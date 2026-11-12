@@ -1,5 +1,10 @@
+{% comment %}
+Shared by the active and archived tables. `is_archived` swaps the edit-mode
+checkbox for a Restore action.
+{% endcomment %}
 {% for order in orders %}
 <tr class="{% cycle 'bg-zinc-800' 'bg-zinc-900' %} border-b border-zinc-700 fade-in">
+    {% if not is_archived %}
     <td class="edit-mode-column px-4 py-3" style="display: none;">
         <input
             type="checkbox"
@@ -8,6 +13,7 @@
             aria-label="Select order {{ order.id }}"
         >
     </td>
+    {% endif %}
     <td class="px-4 py-3 text-sm">{{ order.customer_name }}</td>
     <td class="px-4 py-3 text-sm">{{ order.customer_email }}</td>
     <td class="px-4 py-3 text-sm">{{ order.created_at|date:"M d, Y h:i a" }}</td>
@@ -59,21 +65,50 @@
     {% else %}
     <td class="px-4 py-3 text-center text-sm"></td>
     {% endif %}
+
+    {% if is_archived %}
+    <td class="px-4 py-3 text-center">
+        <form method="post"
+              action="{% url 'order:restore_order' order.id %}"
+              hx-post="{% url 'order:restore_order' order.id %}"
+              hx-trigger="submit"
+              hx-confirm="Are you sure you want to restore this order?">
+            {% csrf_token %}
+            <button type="submit"
+                    class="px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition flex items-center gap-1 mx-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Restore
+            </button>
+        </form>
+    </td>
+    {% endif %}
 </tr>
 {% empty %}
 <tr class="empty-orders-row">
-    <td colspan="7" class="px-4 py-8 text-center text-zinc-500">
-        No orders yet.
+    <td colspan="8" class="px-4 py-8 text-center text-zinc-500">
+        {% if search_query %}
+            No orders match “{{ search_query }}”.
+        {% elif is_archived %}
+            No archived orders.
+        {% else %}
+            No orders yet.
+        {% endif %}
     </td>
 </tr>
 {% endfor %}
 
+{% comment %}
+Infinite scroll. The search term must ride along or page 2 would come back
+unfiltered and the list would mix matches with everything else.
+{% endcomment %}
 {% if has_next %}
 <tr id="loading-spinner-row"
-    hx-get="{% url 'order:order_list' %}?page={{ next_page }}"
+    hx-get="{{ list_url }}?page={{ next_page }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
     hx-trigger="intersect once"
     hx-swap="outerHTML">
-    <td colspan="7" class="px-4 py-4">
+    <td colspan="8" class="px-4 py-4">
         <div class="flex justify-center">
             <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-zinc-600"></div>
         </div>

@@ -17,6 +17,7 @@ urlpatterns = [
     path('product-dashboard/', views.product_dashboard, name='product_dashboard'),
     path('order-dashboard/', views.order_dashboard, name='order_dashboard'),
     path('order-list', views.order_list, name='order_list'),
+    path('archived-list', views.order_list, {'archived': True}, name='archived_order_list'),
     path("orders/<int:order_id>/toggle_paid/", views.toggle_paid, name="toggle_paid"),
     path('summary', views.summary, name='summary'),
     path('collection-create', views.collection_create, name='collection_create'),
