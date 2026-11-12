@@ -82,6 +82,25 @@ class TestArchivedPagination:
         assert response.status_code == 200
         assert 'id="orders-panel"' in response.content.decode()
 
+    def test_archive_page_shows_the_total_count(self, authenticated_client):
+        """The count lives in the page shell, not the HTMX-loaded table."""
+        for i in range(3):
+            make_order(name=f"Archived {i}", archived=True)
+        make_order(name="Active", archived=False)
+
+        content = authenticated_client.get(reverse("order:archived_orders")).content.decode()
+
+        heading = re.search(r"<h3[^>]*>(.*?)</h3>", content, re.DOTALL)
+        assert heading is not None
+        assert "Archived Orders" in heading.group(1)
+        assert "3 orders" in heading.group(1), "count missing or includes active orders"
+
+    def test_archive_count_is_muted(self, authenticated_client):
+        make_order(archived=True)
+        content = authenticated_client.get(reverse("order:archived_orders")).content.decode()
+        span = re.search(r'<span class="([^"]*)">\s*\d+ orders?\s*</span>', content)
+        assert span is not None and "text-zinc-500" in span.group(1)
+
     def test_active_and_archived_lists_do_not_bleed(self, authenticated_client):
         make_order(name="Active Annie", archived=False)
         make_order(name="Archived Arnie", archived=True)
