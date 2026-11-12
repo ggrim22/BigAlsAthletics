@@ -117,6 +117,19 @@ else:
     }
 
 # ============================================================
+# LOCALIZATION
+# ============================================================
+# Django's default TIME_ZONE is America/Chicago, which put every displayed
+# order time an hour behind. New Castle, Indiana is Eastern. Use the named
+# Indiana zone rather than a fixed offset like "EST" so daylight saving is
+# handled automatically.
+
+LANGUAGE_CODE = "en-us"
+TIME_ZONE = "America/Indiana/Indianapolis"
+USE_I18N = True
+USE_TZ = True
+
+# ============================================================
 # STATIC & MEDIA
 # ============================================================
 
