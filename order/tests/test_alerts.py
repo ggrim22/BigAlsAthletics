@@ -122,3 +122,43 @@ class TestAlertsOnCriticalPaths:
         response = client.get(reverse("order:payment-success"), {"session_id": "cs_broken"})
 
         assert response.status_code == 200
+
+
+@pytest.mark.django_db
+class TestWebhookSignatureDiagnostics:
+    """An unsigned scan is noise; a signed request that fails is a real fault."""
+
+    def _post(self, client, headers=None):
+        return client.post(
+            reverse("stripe-webhook"),
+            data=b"{}",
+            content_type="application/json",
+            **(headers or {}),
+        )
+
+    def test_unsigned_post_is_a_warning_not_an_error(self, client, caplog):
+        """Bots scanning the URL must not raise a Sentry issue"""
+        import logging
+        with caplog.at_level(logging.WARNING, logger="order.webhooks"):
+            response = self._post(client)
+
+        assert response.status_code == 400
+        records = [r for r in caplog.records if r.name == "order.webhooks"]
+        assert records, "expected a log record"
+        assert records[0].levelno == logging.WARNING
+        assert "no Stripe-Signature header" in records[0].getMessage()
+
+    def test_bad_signature_is_an_error_with_context(self, client, caplog):
+        """A signed-but-invalid request means the secret is wrong - alert on it"""
+        import logging
+        with caplog.at_level(logging.ERROR, logger="order.webhooks"):
+            response = self._post(client, {"HTTP_STRIPE_SIGNATURE": "t=1,v1=deadbeef"})
+
+        assert response.status_code == 400
+        records = [r for r in caplog.records if r.name == "order.webhooks"]
+        assert records, "expected a log record"
+        assert records[0].levelno == logging.ERROR
+        message = records[0].getMessage()
+        assert "signature verification failed" in message
+        # The message must say enough to act on without opening the code.
+        assert "STRIPE_WEBHOOK_SECRET" in message

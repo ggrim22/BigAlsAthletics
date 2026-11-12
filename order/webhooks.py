@@ -1,15 +1,21 @@
 import json
+import logging
+
 from django.core.mail import send_mail
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
 import stripe
 
 from core import settings
+from core.decorators import get_client_ip
 from core.notify import send_alert
 from core.settings import STRIPE_WEBHOOK_SECRET
 from .models import Size
 from .stripe_orders import create_order_from_checkout_session
-from .views import logger
+
+# Its own logger so webhook problems are attributable in logs and Sentry,
+# rather than appearing to come from order.views.
+logger = logging.getLogger(__name__)
 
 
 @csrf_exempt
@@ -18,15 +24,39 @@ def stripe_webhook(request):
     sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
     event = None
 
+    client_ip = get_client_ip(request)
+
+    if not sig_header:
+        # Public URLs get scanned constantly. A POST with no Stripe-Signature
+        # header did not come from Stripe, so this is noise rather than a fault
+        # -- logged at WARNING so it does not raise a Sentry issue.
+        logger.warning(
+            "Webhook POST with no Stripe-Signature header from %s (%d bytes)",
+            client_ip, len(payload),
+        )
+        return HttpResponse(status=400)
+
     try:
         event = stripe.Webhook.construct_event(
             payload, sig_header, STRIPE_WEBHOOK_SECRET
         )
     except ValueError:
-        logger.error("Invalid payload in Stripe webhook")
+        logger.error(
+            "Stripe webhook payload was not valid JSON: %d bytes from %s",
+            len(payload), client_ip,
+        )
         return HttpResponse(status=400)
     except stripe.error.SignatureVerificationError:
-        logger.error("Invalid signature in Stripe webhook")
+        # A genuine Stripe delivery that fails verification means the configured
+        # signing secret does not match the endpoint, and real orders are being
+        # dropped. Worth a Sentry issue.
+        logger.error(
+            "Stripe signature verification failed for a signed request from %s. "
+            "STRIPE_WEBHOOK_SECRET is %s; confirm it matches this endpoint's "
+            "signing secret and that test/live modes agree.",
+            client_ip,
+            "set" if STRIPE_WEBHOOK_SECRET else "EMPTY",
+        )
         return HttpResponse(status=400)
 
     if event['type'] in ('checkout.session.completed', 'checkout.session.async_payment_succeeded'):
