@@ -1,5 +1,6 @@
 import json
 import logging
+import time
 from datetime import date
 from decimal import Decimal
 import polars as pl
@@ -1087,6 +1088,21 @@ def contact_page(request):
         form = ContactForm(request.POST)
 
         if form.is_valid():
+            # Honeypot: hidden from real users via CSS, so a filled-in value
+            # means a bot submitted the form.
+            if form.cleaned_data.get('website'):
+                logger.info(f"Contact form spam blocked (honeypot) from {request.META.get('REMOTE_ADDR')}")
+                return redirect('order:contact')
+
+            # Timing check: a real person takes more than a couple seconds to
+            # read the page and type a message. Bots that fetch the page and
+            # immediately POST get caught here. The timestamp lives server-side
+            # in the session so it can't be forged by the client.
+            loaded_at = request.session.pop('contact_form_loaded_at', None)
+            if loaded_at is None or time.time() - loaded_at < 3:
+                logger.info(f"Contact form spam blocked (timing) from {request.META.get('REMOTE_ADDR')}")
+                return redirect('order:contact')
+
             user_email = form.cleaned_data['email']
             user_message = form.cleaned_data['message']
 
@@ -1126,5 +1142,6 @@ def contact_page(request):
 
     else:
         form = ContactForm()
+        request.session['contact_form_loaded_at'] = time.time()
 
     return render(request, 'order/contact.html', {'form': form})

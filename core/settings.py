@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from decouple import config
 import dj_database_url
@@ -113,7 +114,7 @@ if DEBUG:
     }
 else:
     DATABASES = {
-        "default": dj_database_url.config(conn_max_age=600)
+        "default": dj_database_url.config(conn_max_age=600, conn_health_checks=True)
     }
 
 # ============================================================
@@ -345,6 +346,7 @@ SENTRY_DSN = config("SENTRY_DSN", default="")
 if SENTRY_DSN:
     try:
         import sentry_sdk
+        from sentry_sdk.integrations.logging import LoggingIntegration
 
         sentry_sdk.init(
             dsn=SENTRY_DSN,
@@ -352,6 +354,16 @@ if SENTRY_DSN:
             # Sample rate for performance traces; errors are always captured.
             traces_sample_rate=float(config("SENTRY_TRACES_SAMPLE_RATE", default="0.0")),
             send_default_pii=False,
+            # Forwards logger.info()+ calls to Sentry's Logs product, in addition
+            # to the existing breadcrumb/issue capture on logger.error().
+            enable_logs=True,
+            integrations=[
+                LoggingIntegration(
+                    level=logging.INFO,         # INFO+ as breadcrumbs
+                    event_level=logging.ERROR,  # ERROR+ as issues
+                    sentry_logs_level=logging.INFO,  # INFO+ forwarded to Sentry Logs
+                ),
+            ],
         )
     except ImportError:  # pragma: no cover - dependency missing in this env
         import warnings

@@ -171,11 +171,20 @@ class ContactForm(forms.Form):
         })
     )
 
+    # Honeypot: hidden from real users via CSS, left blank by them. Bots that
+    # blindly fill every input on the page fill this in, so a non-empty value
+    # means the submission is spam.
+    website = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={'autocomplete': 'off', 'tabindex': '-1'})
+    )
+
     def clean_message(self):
         message = self.cleaned_data.get('message')
         if len(message) < 10:
             raise forms.ValidationError("Please provide a more detailed message (at least 10 characters).")
         return message
+
 
 
 class ProductFilterForm(forms.Form):
